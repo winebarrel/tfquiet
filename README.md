@@ -10,7 +10,7 @@ By default it removes:
 
 | What | Why it's noise |
 | ---- | -------------- |
-| Pure `moved {}` blocks (rename only, no diff) | No actual state change — just an address rename |
+| Pure `moved {}` blocks (rename only, no diff) | No infrastructure change — just a state address rename |
 | Pure `import {}` blocks (imported state already matches config) | No diff to act on; the import itself was already requested |
 | `removed {}` with `lifecycle { destroy = false }` (state-only forget) | Block + the trailing `Warning: Some objects will no longer be managed` paragraph |
 | `Refreshing state...` / `Preparing import...` / `Acquiring state lock` lines | Per-resource status chatter, not diff |
