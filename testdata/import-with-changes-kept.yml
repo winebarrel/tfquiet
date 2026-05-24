@@ -1,0 +1,71 @@
+- name: import block with in-place changes is kept (real diff)
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.imported will be updated in-place
+      # (imported from "id")
+      ~ resource "terraform_data" "imported" {
+            id    = "id"
+          + input = "x"
+        }
+
+    Plan: 1 to import, 0 to add, 1 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+      # terraform_data.imported will be updated in-place
+      # (imported from "id")
+      ~ resource "terraform_data" "imported" {
+            id    = "id"
+          + input = "x"
+        }
+
+    Plan: 1 to import, 0 to add, 1 to change, 0 to destroy.
+
+- name: import block that triggers replacement is kept (real diff)
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.imported must be replaced
+      # (imported from "id")
+    -/+ resource "terraform_data" "imported" {
+          ~ id    = "id" -> (known after apply)
+          + input = "x"
+        }
+
+    Plan: 1 to import, 1 to add, 0 to change, 1 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+      # terraform_data.imported must be replaced
+      # (imported from "id")
+    -/+ resource "terraform_data" "imported" {
+          ~ id    = "id" -> (known after apply)
+          + input = "x"
+        }
+
+    Plan: 1 to import, 1 to add, 0 to change, 1 to destroy.
+
+- name: import block under a module with in-place changes is kept
+  input: |
+    Terraform will perform the following actions:
+
+      # module.inner.terraform_data.bar will be updated in-place
+      # (imported from "stub-id")
+      ~ resource "terraform_data" "bar" {
+            id    = "stub-id"
+          + input = "x"
+        }
+
+    Plan: 1 to import, 0 to add, 1 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+      # module.inner.terraform_data.bar will be updated in-place
+      # (imported from "stub-id")
+      ~ resource "terraform_data" "bar" {
+            id    = "stub-id"
+          + input = "x"
+        }
+
+    Plan: 1 to import, 0 to add, 1 to change, 0 to destroy.

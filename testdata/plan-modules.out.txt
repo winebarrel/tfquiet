@@ -29,6 +29,14 @@ Terraform will perform the following actions:
       - output = "top-gamma" -> null
     }
 
+  # terraform_data.top_imported will be updated in-place
+  # (imported from "top-import-id")
+  ~ resource "terraform_data" "top_imported" {
+        id     = "top-import-id"
+      + input  = "top-imported"
+      + output = (known after apply)
+    }
+
   # terraform_data.top_replace will be created
   + resource "terraform_data" "top_replace" {
       + id               = (known after apply)
@@ -70,4 +78,12 @@ Terraform will perform the following actions:
       - output = "in-module-count-1" -> null
     }
 
-Plan: 0 to import, 2 to add, 2 to change, 4 to destroy.
+  # module.inner.terraform_data.in_module_imported will be updated in-place
+  # (imported from "in-mod-import-id")
+  ~ resource "terraform_data" "in_module_imported" {
+        id     = "in-mod-import-id"
+      + input  = "in-module-imported"
+      + output = (known after apply)
+    }
+
+Plan: 2 to import, 2 to add, 4 to change, 4 to destroy.

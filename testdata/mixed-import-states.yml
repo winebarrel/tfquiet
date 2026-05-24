@@ -1,0 +1,77 @@
+- name: pure import is dropped while import-with-change in the same plan is kept
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.pure will be updated in-place
+      # (imported from "pure-id")
+        resource "terraform_data" "pure" {
+            id = "pure-id"
+        }
+
+      # terraform_data.changed will be updated in-place
+      # (imported from "changed-id")
+      ~ resource "terraform_data" "changed" {
+            id    = "changed-id"
+          + input = "new"
+        }
+
+    Plan: 2 to import, 0 to add, 1 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+      # terraform_data.changed will be updated in-place
+      # (imported from "changed-id")
+      ~ resource "terraform_data" "changed" {
+            id    = "changed-id"
+          + input = "new"
+        }
+
+    Plan: 2 to import, 0 to add, 1 to change, 0 to destroy.
+
+- name: import with replace (-/+) is kept even though imported
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.replaced must be replaced
+      # (imported from "id")
+    -/+ resource "terraform_data" "replaced" {
+          ~ id    = "id" -> (known after apply)
+          + input = "x"
+        }
+
+    Plan: 1 to import, 1 to add, 0 to change, 1 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+      # terraform_data.replaced must be replaced
+      # (imported from "id")
+    -/+ resource "terraform_data" "replaced" {
+          ~ id    = "id" -> (known after apply)
+          + input = "x"
+        }
+
+    Plan: 1 to import, 1 to add, 0 to change, 1 to destroy.
+
+- name: import with create_before_destroy replace (+/-) is kept even though imported
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.cbd must be replaced
+      # (imported from "id")
+    +/- resource "terraform_data" "cbd" {
+          ~ id    = "id" -> (known after apply)
+          + input = "x"
+        }
+
+    Plan: 1 to import, 1 to add, 0 to change, 1 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+      # terraform_data.cbd must be replaced
+      # (imported from "id")
+    +/- resource "terraform_data" "cbd" {
+          ~ id    = "id" -> (known after apply)
+          + input = "x"
+        }
+
+    Plan: 1 to import, 1 to add, 0 to change, 1 to destroy.

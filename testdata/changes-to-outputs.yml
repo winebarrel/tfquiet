@@ -1,0 +1,36 @@
+- name: Changes to Outputs section passes through unchanged
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.x will be created
+      + resource "terraform_data" "x" {
+          + id     = (known after apply)
+          + input  = "v1"
+          + output = (known after apply)
+        }
+
+    Plan: 1 to add, 0 to change, 0 to destroy.
+
+    Changes to Outputs:
+      + answer    = "hello"
+      + from_data = "1"
+
+    ─────────────────────────────────────────────────────────────────────────────
+
+    Note: You didn't use the -out option to save this plan, so Terraform can't
+    guarantee to take exactly these actions if you run "terraform apply" now.
+  expected: |
+    Terraform will perform the following actions:
+
+      # terraform_data.x will be created
+      + resource "terraform_data" "x" {
+          + id     = (known after apply)
+          + input  = "v1"
+          + output = (known after apply)
+        }
+
+    Plan: 1 to add, 0 to change, 0 to destroy.
+
+    Changes to Outputs:
+      + answer    = "hello"
+      + from_data = "1"

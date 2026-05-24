@@ -1,0 +1,35 @@
+- name: Plan summary line is emitted verbatim even when blocks are dropped
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.gone has moved to terraform_data.renamed
+        resource "terraform_data" "renamed" {
+            id = "abc"
+        }
+
+      # terraform_data.pure_import will be updated in-place
+      # (imported from "id")
+        resource "terraform_data" "pure_import" {
+            id = "id"
+        }
+
+    Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+    Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
+
+- name: Plan summary with all-zero counts also passes through verbatim
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.gone has moved to terraform_data.renamed
+        resource "terraform_data" "renamed" {
+            id = "abc"
+        }
+
+    Plan: 0 to add, 0 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+    Plan: 0 to add, 0 to change, 0 to destroy.
