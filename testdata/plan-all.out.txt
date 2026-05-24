@@ -23,4 +23,12 @@ Terraform will perform the following actions:
         # (1 unchanged attribute hidden)
     }
 
-Plan: 0 to import, 1 to add, 1 to change, 1 to destroy.
+  # terraform_data.to_be_destroyed will be destroyed
+  # (because terraform_data.to_be_destroyed is not in configuration)
+  - resource "terraform_data" "to_be_destroyed" {
+      - id     = "6ef59e95-6a38-b1da-de20-a2b98b3671b4" -> null
+      - input  = "destroy-me" -> null
+      - output = "destroy-me" -> null
+    }
+
+Plan: 0 to import, 1 to add, 1 to change, 2 to destroy.

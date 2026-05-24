@@ -19,8 +19,8 @@ func init() {
 type options struct {
 	File        string `arg:"" optional:"" help:"Terraform plan output file. If not specified, read from stdin."`
 	ShowMoved   bool   `help:"Show moved blocks."`
-	ShowDestroy bool   `help:"Show destroy blocks."`
 	ShowImport  bool   `help:"Show import blocks."`
+	ShowRemoved bool   `help:"Show removed{} lifecycle.destroy=false (state-only forget) blocks."`
 	ShowNoise   bool   `help:"Show refresh/lock lines and the trailing Note footer."`
 	Version     kong.VersionFlag
 }
@@ -54,8 +54,8 @@ func main() {
 
 	out, err := tfquiet.Filter(r,
 		tfquiet.OptionShowMoved(opts.ShowMoved),
-		tfquiet.OptionShowDestroy(opts.ShowDestroy),
 		tfquiet.OptionShowImport(opts.ShowImport),
+		tfquiet.OptionShowRemoved(opts.ShowRemoved),
 		tfquiet.OptionShowNoise(opts.ShowNoise),
 	)
 

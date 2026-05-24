@@ -2,8 +2,8 @@ package tfquiet
 
 type options struct {
 	showMoved   bool
-	showDestroy bool
 	showImport  bool
+	showRemoved bool
 	showNoise   bool
 }
 
@@ -25,15 +25,15 @@ func OptionShowMoved(v bool) OptFn {
 	}
 }
 
-func OptionShowDestroy(v bool) OptFn {
-	return func(o *options) {
-		o.showDestroy = v
-	}
-}
-
 func OptionShowImport(v bool) OptFn {
 	return func(o *options) {
 		o.showImport = v
+	}
+}
+
+func OptionShowRemoved(v bool) OptFn {
+	return func(o *options) {
+		o.showRemoved = v
 	}
 }
 

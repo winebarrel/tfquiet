@@ -18,8 +18,8 @@ type testCase struct {
 	Expected     string `yaml:"expected"`
 	ExpectedFile string `yaml:"expectedFile"`
 	ShowMoved    bool   `yaml:"showMoved"`
-	ShowDestroy  bool   `yaml:"showDestroy"`
 	ShowImport   bool   `yaml:"showImport"`
+	ShowRemoved  bool   `yaml:"showRemoved"`
 	ShowNoise    bool   `yaml:"showNoise"`
 }
 
@@ -53,8 +53,8 @@ func TestFilter(t *testing.T) {
 
 				opts := []tfquiet.OptFn{
 					tfquiet.OptionShowMoved(tt.ShowMoved),
-					tfquiet.OptionShowDestroy(tt.ShowDestroy),
 					tfquiet.OptionShowImport(tt.ShowImport),
+					tfquiet.OptionShowRemoved(tt.ShowRemoved),
 					tfquiet.OptionShowNoise(tt.ShowNoise),
 				}
 

@@ -1,47 +1,14 @@
-- name: default filters out moved/destroy/import and noise
+- name: default filters out moved/import/noise (destroy stays)
   inputFile: plan-all.in.txt
   expectedFile: plan-all.out.txt
+
+- name: removed{} destroy=false is filtered, destroy=true (= regular destroy) stays
+  inputFile: plan-removed.in.txt
+  expectedFile: plan-removed.out.txt
 
 - name: show-moved keeps moved blocks
   inputFile: plan-all.in.txt
   showMoved: true
-  expected: |
-    Terraform used the selected providers to generate the following execution
-    plan. Resource actions are indicated with the following symbols:
-      ~ update in-place
-      - destroy
-    -/+ destroy and then create replacement
-
-    Terraform will perform the following actions:
-
-      # terraform_data.keep_one will be updated in-place
-      ~ resource "terraform_data" "keep_one" {
-            id     = "49f3d73d-52b5-87c7-50b6-d9f1dd7939a5"
-          ~ input  = "keep-one" -> "keep-one-updated"
-          ~ output = "keep-one" -> (known after apply)
-        }
-
-      # terraform_data.keep_two must be replaced
-    -/+ resource "terraform_data" "keep_two" {
-          ~ id               = "e8957143-01f2-cce5-cb4e-c8d44351db25" -> (known after apply)
-          ~ output           = "keep-two" -> (known after apply)
-          + triggers_replace = [
-              + "replace-me",
-            ]
-            # (1 unchanged attribute hidden)
-        }
-
-      # terraform_data.to_be_moved_old_name has moved to terraform_data.to_be_moved_new_name
-        resource "terraform_data" "to_be_moved_new_name" {
-            id     = "0ab5fef7-83af-ed68-136f-92fe8fb8970b"
-            # (2 unchanged attributes hidden)
-        }
-
-    Plan: 0 to import, 1 to add, 1 to change, 1 to destroy.
-
-- name: show-destroy keeps destroy blocks
-  inputFile: plan-all.in.txt
-  showDestroy: true
   expected: |
     Terraform used the selected providers to generate the following execution
     plan. Resource actions are indicated with the following symbols:
@@ -74,6 +41,12 @@
           - id     = "6ef59e95-6a38-b1da-de20-a2b98b3671b4" -> null
           - input  = "destroy-me" -> null
           - output = "destroy-me" -> null
+        }
+
+      # terraform_data.to_be_moved_old_name has moved to terraform_data.to_be_moved_new_name
+        resource "terraform_data" "to_be_moved_new_name" {
+            id     = "0ab5fef7-83af-ed68-136f-92fe8fb8970b"
+            # (2 unchanged attributes hidden)
         }
 
     Plan: 0 to import, 1 to add, 1 to change, 2 to destroy.
@@ -115,13 +88,57 @@
             # (1 unchanged attribute hidden)
         }
 
-    Plan: 1 to import, 1 to add, 2 to change, 1 to destroy.
+      # terraform_data.to_be_destroyed will be destroyed
+      # (because terraform_data.to_be_destroyed is not in configuration)
+      - resource "terraform_data" "to_be_destroyed" {
+          - id     = "6ef59e95-6a38-b1da-de20-a2b98b3671b4" -> null
+          - input  = "destroy-me" -> null
+          - output = "destroy-me" -> null
+        }
+
+    Plan: 1 to import, 1 to add, 2 to change, 2 to destroy.
+
+- name: show-removed keeps state-only forget blocks and the Warning footer
+  inputFile: plan-removed.in.txt
+  showRemoved: true
+  expected: |
+    Terraform used the selected providers to generate the following execution
+    plan. Resource actions are indicated with the following symbols:
+      - destroy
+
+    Terraform will perform the following actions:
+
+      # terraform_data.will_be_destroyed will be destroyed
+      # (because terraform_data.will_be_destroyed is not in configuration)
+      - resource "terraform_data" "will_be_destroyed" {
+          - id     = "33d46f0f-a1b9-0fcc-38c4-f7e8dcbf550e" -> null
+          - input  = "destroy-via-removed" -> null
+          - output = "destroy-via-removed" -> null
+        }
+
+     # terraform_data.will_be_state_removed will no longer be managed by Terraform, but will not be destroyed
+     # (destroy = false is set in the configuration)
+     . resource "terraform_data" "will_be_state_removed" {
+            id     = "c870a7b6-63db-3f2f-8eb7-82fe5e0bbd81"
+            # (2 unchanged attributes hidden)
+        }
+
+    Plan: 0 to add, 0 to change, 1 to destroy.
+
+    Warning: Some objects will no longer be managed by Terraform
+
+    If you apply this plan, Terraform will discard its tracking information for
+    the following objects, but it will not delete them:
+     - terraform_data.will_be_state_removed
+
+    After applying this plan, Terraform will no longer manage these objects. You
+    will need to import them into Terraform to manage them again.
 
 - name: all show flags pass input through
   inputFile: plan-all.in.txt
   showMoved: true
-  showDestroy: true
   showImport: true
+  showRemoved: true
   showNoise: true
   expectedFile: plan-all.in.txt
 

@@ -32,16 +32,17 @@ func Filter(r io.Reader, optfns ...OptFn) ([]byte, error) {
 }
 
 var (
-	blockHeaderRe   = regexp.MustCompile(`^  # `)
-	resourceLineRe  = regexp.MustCompile(`^[+\-~/ ]{4}resource "`)
+	blockHeaderRe   = regexp.MustCompile(`^ {1,2}# `)
+	resourceLineRe  = regexp.MustCompile(`^( \. |[+\-~/ ]{4})resource "`)
 	blockCloseRe    = regexp.MustCompile(`^    }$`)
 	movedHeaderRe   = regexp.MustCompile(` has moved to `)
-	destroyHeaderRe = regexp.MustCompile(` will be destroyed$`)
-	importHeaderRe  = regexp.MustCompile(`^  # \(imported from `)
+	removedHeaderRe = regexp.MustCompile(` will no longer be managed by Terraform`)
+	importHeaderRe  = regexp.MustCompile(`^ {1,2}# \(imported from `)
 	noiseLineRe     = regexp.MustCompile(`: (Refreshing state\.\.\.|Preparing import\.\.\.|Reading\.\.\.|Read complete after )`)
 	lockLineRe      = regexp.MustCompile(`^Acquiring state lock\.`)
 	dividerRe       = regexp.MustCompile(`^─+$`)
 	planSummaryRe   = regexp.MustCompile(`^Plan: `)
+	warningStartRe  = regexp.MustCompile(`^Warning: Some objects will no longer be managed by Terraform`)
 )
 
 type blockKind int
@@ -49,8 +50,8 @@ type blockKind int
 const (
 	kindOther blockKind = iota
 	kindMoved
-	kindDestroy
 	kindImport
+	kindRemoved
 )
 
 type block struct {
@@ -79,6 +80,15 @@ func filterLines(lines []string, opts *options) []byte {
 		if !opts.showNoise && isTrailingNoteStart(lines, i) {
 			// Drop divider + Note paragraph through EOF.
 			break
+		}
+
+		if !opts.showRemoved && warningStartRe.MatchString(line) {
+			// Skip the trailing "Warning: Some objects will no longer be
+			// managed" section that pairs with removed{} destroy=false blocks.
+			for i < len(lines) && !dividerRe.MatchString(lines[i]) {
+				i++
+			}
+			continue
 		}
 
 		if blockHeaderRe.MatchString(line) {
@@ -156,8 +166,8 @@ func readBlock(lines []string, start int) (*block, int) {
 			b.kind = kindImport
 		case movedHeaderRe.MatchString(lines[i]) && b.kind == kindOther:
 			b.kind = kindMoved
-		case destroyHeaderRe.MatchString(lines[i]) && b.kind == kindOther:
-			b.kind = kindDestroy
+		case removedHeaderRe.MatchString(lines[i]) && b.kind == kindOther:
+			b.kind = kindRemoved
 		}
 
 		i++
@@ -209,10 +219,10 @@ func shouldDrop(b *block, opts *options) bool {
 	switch b.kind {
 	case kindMoved:
 		return !opts.showMoved
-	case kindDestroy:
-		return !opts.showDestroy
 	case kindImport:
 		return !opts.showImport
+	case kindRemoved:
+		return !opts.showRemoved
 	}
 	return false
 }
