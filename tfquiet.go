@@ -110,6 +110,13 @@ func (f *streamFilter) processLine(line string) error {
 		return f.continueBlock(line, s)
 	}
 
+	// Any non-blank line consumes the "skip next blank" claim that was set
+	// by a dropped block — even if the line itself is skipped (noise, divider,
+	// warning start). skipNextBlank should only target a truly-adjacent blank.
+	if s != "" {
+		f.skipNextBlank = false
+	}
+
 	if f.skippingWarning {
 		if dividerRe.MatchString(s) {
 			f.skippingWarning = false
@@ -250,7 +257,10 @@ func (f *streamFilter) emit(line string) error {
 	out = append(out, line...)
 	out = append(out, '\n')
 
-	_, err := f.w.Write(out)
+	n, err := f.w.Write(out)
+	if err == nil && n < len(out) {
+		return io.ErrShortWrite
+	}
 	return err
 }
 
