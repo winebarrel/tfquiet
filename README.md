@@ -42,17 +42,10 @@ Flags:
 Pipe `terraform plan` straight through:
 
 ```sh
-terraform plan -no-color | tfquiet
+terraform plan | tfquiet
 ```
 
-ANSI color is supported too — wrap with a pty so Terraform keeps colors when piped:
-
-```sh
-script -q /dev/null terraform plan | tfquiet   # macOS / BSD
-unbuffer terraform plan | tfquiet              # Linux (expect package)
-```
-
-Color sequences in the input are preserved unchanged in the output.
+Recent Terraform releases keep ANSI color on even when stdout is a pipe; tfquiet preserves those sequences in the output. Pass `terraform plan -no-color` if you want plain text.
 
 ### Example
 
