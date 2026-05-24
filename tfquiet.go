@@ -11,8 +11,10 @@ import (
 
 func FilterBytes(src []byte, opts *Options) ([]byte, error) {
 	var buf bytes.Buffer
-	err := Filter(bytes.NewReader(src), &buf, opts)
-	return buf.Bytes(), err
+	if err := Filter(bytes.NewReader(src), &buf, opts); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 func Filter(r io.Reader, w io.Writer, opts *Options) error {
@@ -28,6 +30,9 @@ func Filter(r io.Reader, w io.Writer, opts *Options) error {
 	for sc.Scan() {
 		if err := f.processLine(sc.Text()); err != nil {
 			return err
+		}
+		if f.done {
+			break
 		}
 	}
 
@@ -99,10 +104,6 @@ type streamFilter struct {
 }
 
 func (f *streamFilter) processLine(line string) error {
-	if f.done {
-		return nil
-	}
-
 	s := stripANSI(line)
 
 	if f.block != nil {

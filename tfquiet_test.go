@@ -85,6 +85,20 @@ func TestFilter_PropagatesReaderError(t *testing.T) {
 	require.ErrorContains(t, err, "failed to read input")
 }
 
+func TestFilterBytes_PropagatesScannerError(t *testing.T) {
+	// A single line longer than the scanner buffer (8MB) trips
+	// bufio.ErrTooLong, which Filter wraps and FilterBytes propagates
+	// as (nil, err).
+	big := make([]byte, 9*1024*1024)
+	for i := range big {
+		big[i] = 'x'
+	}
+	out, err := tfquiet.FilterBytes(big, nil)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "failed to read input")
+	require.Nil(t, out)
+}
+
 type errWriter struct{ err error }
 
 func (w *errWriter) Write(p []byte) (int, error) { return 0, w.err }
