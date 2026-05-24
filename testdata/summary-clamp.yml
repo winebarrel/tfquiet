@@ -1,0 +1,15 @@
+- name: summary counts are clamped at zero when input under-reports
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.imported will be updated in-place
+      # (imported from "id")
+      ~ resource "terraform_data" "imported" {
+            id = "x"
+        }
+
+    Plan: 0 to import, 0 to add, 0 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+    Plan: 0 to import, 0 to add, 0 to change, 0 to destroy.

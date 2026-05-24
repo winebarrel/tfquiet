@@ -1,0 +1,11 @@
+- name: state lock line is stripped as noise
+  input: |
+    Acquiring state lock. This may take a few moments...
+
+    Terraform will perform the following actions:
+
+    Plan: 0 to add, 0 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+    Plan: 0 to add, 0 to change, 0 to destroy.
