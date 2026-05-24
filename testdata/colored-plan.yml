@@ -1,0 +1,3 @@
+- name: colored plan preserves ANSI sequences and trims Note even without divider
+  inputFile: plan-color.in.txt
+  expectedFile: plan-color.out.txt

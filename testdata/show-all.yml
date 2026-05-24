@@ -1,0 +1,7 @@
+- name: all show flags pass input through
+  inputFile: plan-all.in.txt
+  showMoved: true
+  showImport: true
+  showRemoved: true
+  showNoise: true
+  expectedFile: plan-all.in.txt

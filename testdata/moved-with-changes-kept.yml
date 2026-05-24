@@ -1,0 +1,23 @@
+- name: moved-with-changes (header "(moved from X)") is kept — real diff
+  input: |
+    Terraform will perform the following actions:
+
+      # module.x.terraform_data.dst will be updated in-place
+      # (moved from terraform_data.src)
+      ~ resource "terraform_data" "dst" {
+            id    = "abc"
+          ~ input = "old" -> "new"
+        }
+
+    Plan: 0 to add, 1 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+      # module.x.terraform_data.dst will be updated in-place
+      # (moved from terraform_data.src)
+      ~ resource "terraform_data" "dst" {
+            id    = "abc"
+          ~ input = "old" -> "new"
+        }
+
+    Plan: 0 to add, 1 to change, 0 to destroy.

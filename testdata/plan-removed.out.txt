@@ -1,0 +1,15 @@
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  - destroy
+
+Terraform will perform the following actions:
+
+  # terraform_data.will_be_destroyed will be destroyed
+  # (because terraform_data.will_be_destroyed is not in configuration)
+  - resource "terraform_data" "will_be_destroyed" {
+      - id     = "33d46f0f-a1b9-0fcc-38c4-f7e8dcbf550e" -> null
+      - input  = "destroy-via-removed" -> null
+      - output = "destroy-via-removed" -> null
+    }
+
+Plan: 0 to add, 0 to change, 1 to destroy.

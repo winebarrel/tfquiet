@@ -1,0 +1,73 @@
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+  ~ update in-place
+  - destroy
+
+Terraform will perform the following actions:
+
+  # terraform_data.top_count[2] will be destroyed
+  # (because index [2] is out of range for count)
+  - resource "terraform_data" "top_count" {
+      - id     = "1c41a7fc-c816-6f2f-9b6c-9806ee6b6a5a" -> null
+      - input  = "top-count-2" -> null
+      - output = "top-count-2" -> null
+    }
+
+  # terraform_data.top_for_each["delta"] will be created
+  + resource "terraform_data" "top_for_each" {
+      + id     = (known after apply)
+      + input  = "top-delta"
+      + output = (known after apply)
+    }
+
+  # terraform_data.top_for_each["gamma"] will be destroyed
+  # (because key ["gamma"] is not in for_each map)
+  - resource "terraform_data" "top_for_each" {
+      - id     = "d82af006-2a19-a209-15e3-7769773846bb" -> null
+      - input  = "top-gamma" -> null
+      - output = "top-gamma" -> null
+    }
+
+  # terraform_data.top_replace will be created
+  + resource "terraform_data" "top_replace" {
+      + id               = (known after apply)
+      + input            = "top-replace"
+      + output           = (known after apply)
+      + triggers_replace = [
+          + "replace-me",
+        ]
+    }
+
+  # terraform_data.top_to_be_destroyed will be destroyed
+  # (because terraform_data.top_to_be_destroyed is not in configuration)
+  - resource "terraform_data" "top_to_be_destroyed" {
+      - id     = "74d14af0-fe90-4df5-1ced-9f19a0132ddb" -> null
+      - input  = "destroy-top" -> null
+      - output = "destroy-top" -> null
+    }
+
+  # module.inner.terraform_data.from_root will be updated in-place
+  # (moved from terraform_data.top_keep)
+  ~ resource "terraform_data" "from_root" {
+        id     = "2254d362-825b-7790-d0a3-acc8cfabee5c"
+      ~ input  = "top-keep" -> "top-keep-updated"
+      ~ output = "top-keep" -> (known after apply)
+    }
+
+  # module.inner.terraform_data.in_module will be updated in-place
+  ~ resource "terraform_data" "in_module" {
+        id     = "216b9035-4b6b-e954-9e7e-52c43ec7d534"
+      ~ input  = "in-module" -> "in-module-updated"
+      ~ output = "in-module" -> (known after apply)
+    }
+
+  # module.inner.terraform_data.in_module_count[1] will be destroyed
+  # (because index [1] is out of range for count)
+  - resource "terraform_data" "in_module_count" {
+      - id     = "912f0d9f-ea81-fd75-1c26-b75324415e2b" -> null
+      - input  = "in-module-count-1" -> null
+      - output = "in-module-count-1" -> null
+    }
+
+Plan: 0 to import, 2 to add, 2 to change, 4 to destroy.

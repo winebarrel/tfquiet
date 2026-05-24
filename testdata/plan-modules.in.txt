@@ -1,0 +1,117 @@
+terraform_data.top_imported: Preparing import... [id=top-import-id]
+terraform_data.top_imported: Refreshing state... [id=top-import-id]
+terraform_data.top_to_be_destroyed: Refreshing state... [id=74d14af0-fe90-4df5-1ced-9f19a0132ddb]
+module.inner.terraform_data.from_root: Refreshing state... [id=2254d362-825b-7790-d0a3-acc8cfabee5c]
+module.inner.terraform_data.in_module: Refreshing state... [id=216b9035-4b6b-e954-9e7e-52c43ec7d534]
+terraform_data.top_new_name: Refreshing state... [id=18fab709-0ab7-f4be-07ed-4e653b478199]
+terraform_data.top_for_each["gamma"]: Refreshing state... [id=d82af006-2a19-a209-15e3-7769773846bb]
+terraform_data.top_for_each["alpha"]: Refreshing state... [id=e5b1f925-67c2-ee80-58cc-d5148025adfd]
+terraform_data.top_for_each["beta"]: Refreshing state... [id=1d95ff5d-8b4a-7672-92ba-a3c29fd1fcba]
+module.inner.terraform_data.in_module_imported: Preparing import... [id=in-mod-import-id]
+terraform_data.top_count[1]: Refreshing state... [id=ecb7b009-779c-e4df-f09a-7b7d347b48f8]
+module.inner.terraform_data.in_module_imported: Refreshing state... [id=in-mod-import-id]
+terraform_data.top_count[0]: Refreshing state... [id=3e5a0598-fac0-7644-5825-0556060fccfa]
+terraform_data.top_count[2]: Refreshing state... [id=1c41a7fc-c816-6f2f-9b6c-9806ee6b6a5a]
+module.inner.terraform_data.in_module_count[1]: Refreshing state... [id=912f0d9f-ea81-fd75-1c26-b75324415e2b]
+module.inner.terraform_data.in_module_count[0]: Refreshing state... [id=4aefcaa9-a69e-e892-cf6b-2de2ec900faa]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+  ~ update in-place
+  - destroy
+
+Terraform will perform the following actions:
+
+  # terraform_data.top_count[2] will be destroyed
+  # (because index [2] is out of range for count)
+  - resource "terraform_data" "top_count" {
+      - id     = "1c41a7fc-c816-6f2f-9b6c-9806ee6b6a5a" -> null
+      - input  = "top-count-2" -> null
+      - output = "top-count-2" -> null
+    }
+
+  # terraform_data.top_for_each["delta"] will be created
+  + resource "terraform_data" "top_for_each" {
+      + id     = (known after apply)
+      + input  = "top-delta"
+      + output = (known after apply)
+    }
+
+  # terraform_data.top_for_each["gamma"] will be destroyed
+  # (because key ["gamma"] is not in for_each map)
+  - resource "terraform_data" "top_for_each" {
+      - id     = "d82af006-2a19-a209-15e3-7769773846bb" -> null
+      - input  = "top-gamma" -> null
+      - output = "top-gamma" -> null
+    }
+
+  # terraform_data.top_imported will be updated in-place
+  # (imported from "top-import-id")
+  ~ resource "terraform_data" "top_imported" {
+        id     = "top-import-id"
+      + input  = "top-imported"
+      + output = (known after apply)
+    }
+
+  # terraform_data.top_old_name has moved to terraform_data.top_new_name
+    resource "terraform_data" "top_new_name" {
+        id     = "18fab709-0ab7-f4be-07ed-4e653b478199"
+        # (2 unchanged attributes hidden)
+    }
+
+  # terraform_data.top_replace will be created
+  + resource "terraform_data" "top_replace" {
+      + id               = (known after apply)
+      + input            = "top-replace"
+      + output           = (known after apply)
+      + triggers_replace = [
+          + "replace-me",
+        ]
+    }
+
+  # terraform_data.top_to_be_destroyed will be destroyed
+  # (because terraform_data.top_to_be_destroyed is not in configuration)
+  - resource "terraform_data" "top_to_be_destroyed" {
+      - id     = "74d14af0-fe90-4df5-1ced-9f19a0132ddb" -> null
+      - input  = "destroy-top" -> null
+      - output = "destroy-top" -> null
+    }
+
+  # module.inner.terraform_data.from_root will be updated in-place
+  # (moved from terraform_data.top_keep)
+  ~ resource "terraform_data" "from_root" {
+        id     = "2254d362-825b-7790-d0a3-acc8cfabee5c"
+      ~ input  = "top-keep" -> "top-keep-updated"
+      ~ output = "top-keep" -> (known after apply)
+    }
+
+  # module.inner.terraform_data.in_module will be updated in-place
+  ~ resource "terraform_data" "in_module" {
+        id     = "216b9035-4b6b-e954-9e7e-52c43ec7d534"
+      ~ input  = "in-module" -> "in-module-updated"
+      ~ output = "in-module" -> (known after apply)
+    }
+
+  # module.inner.terraform_data.in_module_count[1] will be destroyed
+  # (because index [1] is out of range for count)
+  - resource "terraform_data" "in_module_count" {
+      - id     = "912f0d9f-ea81-fd75-1c26-b75324415e2b" -> null
+      - input  = "in-module-count-1" -> null
+      - output = "in-module-count-1" -> null
+    }
+
+  # module.inner.terraform_data.in_module_imported will be updated in-place
+  # (imported from "in-mod-import-id")
+  ~ resource "terraform_data" "in_module_imported" {
+        id     = "in-mod-import-id"
+      + input  = "in-module-imported"
+      + output = (known after apply)
+    }
+
+Plan: 2 to import, 2 to add, 4 to change, 4 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.
