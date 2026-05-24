@@ -45,6 +45,15 @@ Pipe `terraform plan` straight through:
 terraform plan -no-color | tfquiet
 ```
 
+ANSI color is supported too — wrap with a pty so Terraform keeps colors when piped:
+
+```sh
+script -q /dev/null terraform plan | tfquiet   # macOS / BSD
+unbuffer terraform plan | tfquiet              # Linux (expect package)
+```
+
+Color sequences in the input are preserved unchanged in the output.
+
 ### Example
 
 Given this `terraform plan` output:
