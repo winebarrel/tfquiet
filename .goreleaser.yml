@@ -15,7 +15,7 @@ homebrew_casks:
       owner: winebarrel
       name: homebrew-tfquiet
     homepage: https://github.com/winebarrel/tfquiet
-    description: tfquiet filters import/moved/destroy noise out of terraform plan output.
+    description: tfquiet trims noise out of terraform plan output so the diff that matters stays in focus.
     license: MIT
     hooks:
       post:
