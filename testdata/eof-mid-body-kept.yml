@@ -1,0 +1,13 @@
+- name: kept block cut short at EOF is still emitted via finish
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.x will be destroyed
+      - resource "terraform_data" "x" {
+          - id = "abc" -> null
+  expected: |
+    Terraform will perform the following actions:
+
+      # terraform_data.x will be destroyed
+      - resource "terraform_data" "x" {
+          - id = "abc" -> null

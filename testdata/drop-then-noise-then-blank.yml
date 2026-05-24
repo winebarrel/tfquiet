@@ -1,0 +1,16 @@
+- name: dropped block followed by a noise line then a blank keeps the blank
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.src has moved to terraform_data.dst
+        resource "terraform_data" "dst" {
+            id = "abc"
+        }
+    fake.resource: Refreshing state... [id=stub]
+
+    next paragraph
+  expected: |
+    Terraform will perform the following actions:
+
+
+    next paragraph

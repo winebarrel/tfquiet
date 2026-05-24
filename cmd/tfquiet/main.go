@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -48,10 +47,7 @@ func main() {
 		r = f
 	}
 
-	out, err := tfquiet.Filter(r, opts)
-	if err != nil {
+	if err := tfquiet.Filter(r, os.Stdout, opts); err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Print(string(out))
 }

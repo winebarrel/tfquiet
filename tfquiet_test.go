@@ -2,8 +2,10 @@ package tfquiet_test
 
 import (
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -78,7 +80,56 @@ type errReader struct{ err error }
 func (r *errReader) Read(p []byte) (int, error) { return 0, r.err }
 
 func TestFilter_PropagatesReaderError(t *testing.T) {
-	_, err := tfquiet.Filter(&errReader{err: errors.New("boom")}, nil)
+	err := tfquiet.Filter(&errReader{err: errors.New("boom")}, io.Discard, nil)
 	require.ErrorContains(t, err, "boom")
 	require.ErrorContains(t, err, "failed to read input")
+}
+
+type shortWriter struct{}
+
+func (shortWriter) Write(p []byte) (int, error) { return 0, nil }
+
+func TestFilter_DetectsShortWrite(t *testing.T) {
+	err := tfquiet.Filter(strings.NewReader("hello\n"), shortWriter{}, nil)
+	require.ErrorIs(t, err, io.ErrShortWrite)
+}
+
+func TestFilterBytes_PropagatesScannerError(t *testing.T) {
+	// A single line longer than the scanner buffer (8MB) trips
+	// bufio.ErrTooLong, which Filter wraps and FilterBytes propagates
+	// as (nil, err).
+	big := make([]byte, 9*1024*1024)
+	for i := range big {
+		big[i] = 'x'
+	}
+	out, err := tfquiet.FilterBytes(big, nil)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "failed to read input")
+	require.Nil(t, out)
+}
+
+type errWriter struct{ err error }
+
+func (w *errWriter) Write(p []byte) (int, error) { return 0, w.err }
+
+func TestFilter_PropagatesWriterErrorOnRegularLine(t *testing.T) {
+	err := tfquiet.Filter(strings.NewReader("hello\n"), &errWriter{err: errors.New("boom")}, nil)
+	require.ErrorContains(t, err, "boom")
+}
+
+func TestFilter_PropagatesWriterErrorOnOrphanHeader(t *testing.T) {
+	// `# foo` is a block header, but `bar` isn't a resource line, so the
+	// streaming filter flushes the buffered header through emit — which is
+	// where the writer error fires.
+	input := "  # foo\nbar\n"
+	err := tfquiet.Filter(strings.NewReader(input), &errWriter{err: errors.New("boom")}, nil)
+	require.ErrorContains(t, err, "boom")
+}
+
+func TestFilter_PropagatesWriterErrorOnKeptBlock(t *testing.T) {
+	// A destroy block is always kept; flushBlock loops over its lines calling
+	// emit, which surfaces the writer error.
+	input := "  # terraform_data.x will be destroyed\n  - resource \"terraform_data\" \"x\" {\n      - id = \"abc\" -> null\n    }\n"
+	err := tfquiet.Filter(strings.NewReader(input), &errWriter{err: errors.New("boom")}, nil)
+	require.ErrorContains(t, err, "boom")
 }
