@@ -1,0 +1,9 @@
+- name: dropped block cut short at EOF is still consumed via finish
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.x has moved to terraform_data.y
+        resource "terraform_data" "y" {
+            id = "abc"
+  expected: |
+    Terraform will perform the following actions:

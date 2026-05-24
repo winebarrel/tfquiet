@@ -1,0 +1,11 @@
+- name: orphan headers at EOF are still emitted via finish
+  input: |
+    Terraform will perform the following actions:
+
+      # orphan header at EOF
+      # second header line
+  expected: |
+    Terraform will perform the following actions:
+
+      # orphan header at EOF
+      # second header line

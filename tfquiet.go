@@ -35,7 +35,7 @@ func Filter(r io.Reader, w io.Writer, opts *Options) error {
 		return fmt.Errorf("failed to read input: %w", err)
 	}
 
-	return nil
+	return f.finish()
 }
 
 var (
@@ -190,6 +190,17 @@ func (f *streamFilter) continueBlock(line, s string) error {
 		return f.flushBlock()
 	}
 	return nil
+}
+
+// finish handles a block left dangling at EOF. Both header-only and
+// mid-body cases go through flushBlock so kind-based drop/keep stays
+// consistent with the readBlock-then-shouldDrop flow from the original
+// buffered implementation.
+func (f *streamFilter) finish() error {
+	if f.block == nil {
+		return nil
+	}
+	return f.flushBlock()
 }
 
 func (f *streamFilter) flushBlock() error {
