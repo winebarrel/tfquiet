@@ -21,3 +21,10 @@ jobs:
           cache: false
       - uses: golangci/golangci-lint-action@v9
       - run: make test
+        env:
+          TEST_FLAGS: -coverprofile=coverage.out -covermode=atomic
+      - uses: codecov/codecov-action@v6
+        with:
+          files: ./coverage.out
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
