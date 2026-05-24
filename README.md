@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/winebarrel/tfquiet/actions/workflows/ci.yml/badge.svg)](https://github.com/winebarrel/tfquiet/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/winebarrel/tfquiet/graph/badge.svg)](https://codecov.io/gh/winebarrel/tfquiet)
+[![AI Generated](https://img.shields.io/badge/AI%20Generated-Claude-orange?logo=anthropic)](https://claude.ai/claude-code)
 
 tfquiet trims noise out of `terraform plan` output so the diff that matters stays in focus.
 
