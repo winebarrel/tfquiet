@@ -9,12 +9,14 @@ import (
 	"strings"
 )
 
-func FilterBytes(src []byte, optfns ...OptFn) ([]byte, error) {
-	return Filter(bytes.NewReader(src), optfns...)
+func FilterBytes(src []byte, opts *Options) ([]byte, error) {
+	return Filter(bytes.NewReader(src), opts)
 }
 
-func Filter(r io.Reader, optfns ...OptFn) ([]byte, error) {
-	opts := newOptions(optfns)
+func Filter(r io.Reader, opts *Options) ([]byte, error) {
+	if opts == nil {
+		opts = &Options{}
+	}
 
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 64*1024), 8*1024*1024)
@@ -73,7 +75,7 @@ type block struct {
 	nImport, nAdd, nChange, nDestroy int
 }
 
-func filterLines(lines []string, opts *options) []byte {
+func filterLines(lines []string, opts *Options) []byte {
 	stripped := make([]string, len(lines))
 	for i, l := range lines {
 		stripped[i] = stripANSI(l)
@@ -89,17 +91,17 @@ func filterLines(lines []string, opts *options) []byte {
 	for i < len(lines) {
 		s := stripped[i]
 
-		if !opts.showNoise && isNoiseLine(s) {
+		if !opts.ShowNoise && isNoiseLine(s) {
 			i++
 			continue
 		}
 
-		if !opts.showNoise && (dividerRe.MatchString(s) || noteFooterRe.MatchString(s)) {
+		if !opts.ShowNoise && (dividerRe.MatchString(s) || noteFooterRe.MatchString(s)) {
 			// Drop divider / Note paragraph through EOF.
 			break
 		}
 
-		if !opts.showRemoved && warningStartRe.MatchString(s) {
+		if !opts.ShowRemoved && warningStartRe.MatchString(s) {
 			// Skip the trailing "Warning: Some objects will no longer be
 			// managed" section that pairs with removed{} destroy=false blocks.
 			for i < len(lines) && !dividerRe.MatchString(stripped[i]) {
@@ -224,14 +226,14 @@ func classifyCount(b *block, resourceLine string) {
 	}
 }
 
-func shouldDrop(b *block, opts *options) bool {
+func shouldDrop(b *block, opts *Options) bool {
 	switch b.kind {
 	case kindMoved:
-		return !opts.showMoved
+		return !opts.ShowMoved
 	case kindImport:
-		return !opts.showImport
+		return !opts.ShowImport
 	case kindRemoved:
-		return !opts.showRemoved
+		return !opts.ShowRemoved
 	}
 	return false
 }

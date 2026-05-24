@@ -51,14 +51,14 @@ func TestFilter(t *testing.T) {
 					expected = string(b)
 				}
 
-				opts := []tfquiet.OptFn{
-					tfquiet.OptionShowMoved(tt.ShowMoved),
-					tfquiet.OptionShowImport(tt.ShowImport),
-					tfquiet.OptionShowRemoved(tt.ShowRemoved),
-					tfquiet.OptionShowNoise(tt.ShowNoise),
+				opts := &tfquiet.Options{
+					ShowMoved:   tt.ShowMoved,
+					ShowImport:  tt.ShowImport,
+					ShowRemoved: tt.ShowRemoved,
+					ShowNoise:   tt.ShowNoise,
 				}
 
-				out, err := tfquiet.FilterBytes([]byte(input), opts...)
+				out, err := tfquiet.FilterBytes([]byte(input), opts)
 				require.NoError(t, err)
 				assert.Equal(t, expected, string(out))
 			})
