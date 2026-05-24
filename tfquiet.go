@@ -32,6 +32,7 @@ func Filter(r io.Reader, optfns ...OptFn) ([]byte, error) {
 }
 
 var (
+	ansiRe          = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
 	blockHeaderRe   = regexp.MustCompile(`^ {1,2}# `)
 	resourceLineRe  = regexp.MustCompile(`^( \. |[+\-~/ ]{4})resource "`)
 	blockCloseRe    = regexp.MustCompile(`^    }$`)
@@ -42,8 +43,19 @@ var (
 	lockLineRe      = regexp.MustCompile(`^Acquiring state lock\.`)
 	dividerRe       = regexp.MustCompile(`^─+$`)
 	planSummaryRe   = regexp.MustCompile(`^Plan: `)
+	noteFooterRe    = regexp.MustCompile(`^Note: You didn't use the -out option`)
 	warningStartRe  = regexp.MustCompile(`^Warning: Some objects will no longer be managed by Terraform`)
 )
+
+// stripANSI returns line with ANSI CSI escape sequences and trailing carriage
+// returns removed, so regex matching can run against the visible text.
+func stripANSI(line string) string {
+	line = strings.TrimRight(line, "\r")
+	if !strings.ContainsRune(line, '\x1b') {
+		return line
+	}
+	return ansiRe.ReplaceAllString(line, "")
+}
 
 type blockKind int
 
@@ -62,6 +74,11 @@ type block struct {
 }
 
 func filterLines(lines []string, opts *options) []byte {
+	stripped := make([]string, len(lines))
+	for i, l := range lines {
+		stripped[i] = stripANSI(l)
+	}
+
 	var dropped struct {
 		nImport, nAdd, nChange, nDestroy int
 	}
@@ -70,36 +87,36 @@ func filterLines(lines []string, opts *options) []byte {
 	i := 0
 
 	for i < len(lines) {
-		line := lines[i]
+		s := stripped[i]
 
-		if !opts.showNoise && isNoiseLine(line) {
+		if !opts.showNoise && isNoiseLine(s) {
 			i++
 			continue
 		}
 
-		if !opts.showNoise && isTrailingNoteStart(lines, i) {
-			// Drop divider + Note paragraph through EOF.
+		if !opts.showNoise && (dividerRe.MatchString(s) || noteFooterRe.MatchString(s)) {
+			// Drop divider / Note paragraph through EOF.
 			break
 		}
 
-		if !opts.showRemoved && warningStartRe.MatchString(line) {
+		if !opts.showRemoved && warningStartRe.MatchString(s) {
 			// Skip the trailing "Warning: Some objects will no longer be
 			// managed" section that pairs with removed{} destroy=false blocks.
-			for i < len(lines) && !dividerRe.MatchString(lines[i]) {
+			for i < len(lines) && !dividerRe.MatchString(stripped[i]) {
 				i++
 			}
 			continue
 		}
 
-		if blockHeaderRe.MatchString(line) {
-			b, next := readBlock(lines, i)
+		if blockHeaderRe.MatchString(s) {
+			b, next := readBlock(lines, stripped, i)
 			if shouldDrop(b, opts) {
 				dropped.nImport += b.nImport
 				dropped.nAdd += b.nAdd
 				dropped.nChange += b.nChange
 				dropped.nDestroy += b.nDestroy
 				// Also skip the trailing blank line after the block, if any.
-				if next < len(lines) && lines[next] == "" {
+				if next < len(lines) && stripped[next] == "" {
 					next++
 				}
 				i = next
@@ -113,14 +130,14 @@ func filterLines(lines []string, opts *options) []byte {
 			continue
 		}
 
-		if planSummaryRe.MatchString(line) {
-			out.WriteString(rewriteSummary(line, dropped.nImport, dropped.nAdd, dropped.nChange, dropped.nDestroy))
+		if planSummaryRe.MatchString(s) {
+			out.WriteString(rewriteSummary(lines[i], dropped.nImport, dropped.nAdd, dropped.nChange, dropped.nDestroy))
 			out.WriteByte('\n')
 			i++
 			continue
 		}
 
-		out.WriteString(line)
+		out.WriteString(lines[i])
 		out.WriteByte('\n')
 		i++
 	}
@@ -135,38 +152,30 @@ func trimLeadingBlanks(b []byte) []byte {
 	return b
 }
 
-func isNoiseLine(line string) bool {
-	if noiseLineRe.MatchString(line) {
+func isNoiseLine(s string) bool {
+	if noiseLineRe.MatchString(s) {
 		return true
 	}
-	if lockLineRe.MatchString(line) {
-		return true
-	}
-	return false
-}
-
-func isTrailingNoteStart(lines []string, i int) bool {
-	// A "Note:" footer is typically preceded by a horizontal divider.
-	if dividerRe.MatchString(lines[i]) {
+	if lockLineRe.MatchString(s) {
 		return true
 	}
 	return false
 }
 
-func readBlock(lines []string, start int) (*block, int) {
+func readBlock(lines, stripped []string, start int) (*block, int) {
 	b := &block{kind: kindOther}
 	i := start
 
 	// Header comment lines.
-	for i < len(lines) && blockHeaderRe.MatchString(lines[i]) {
+	for i < len(lines) && blockHeaderRe.MatchString(stripped[i]) {
 		b.lines = append(b.lines, lines[i])
 
 		switch {
-		case importHeaderRe.MatchString(lines[i]):
+		case importHeaderRe.MatchString(stripped[i]):
 			b.kind = kindImport
-		case movedHeaderRe.MatchString(lines[i]) && b.kind == kindOther:
+		case movedHeaderRe.MatchString(stripped[i]) && b.kind == kindOther:
 			b.kind = kindMoved
-		case removedHeaderRe.MatchString(lines[i]) && b.kind == kindOther:
+		case removedHeaderRe.MatchString(stripped[i]) && b.kind == kindOther:
 			b.kind = kindRemoved
 		}
 
@@ -174,9 +183,9 @@ func readBlock(lines []string, start int) (*block, int) {
 	}
 
 	// Resource opening line.
-	if i < len(lines) && resourceLineRe.MatchString(lines[i]) {
+	if i < len(lines) && resourceLineRe.MatchString(stripped[i]) {
 		b.lines = append(b.lines, lines[i])
-		classifyCount(b, lines[i])
+		classifyCount(b, stripped[i])
 		i++
 	} else {
 		// Not a resource block we recognize. Mark as other and stop here.
@@ -186,7 +195,7 @@ func readBlock(lines []string, start int) (*block, int) {
 	// Body until closing line.
 	for i < len(lines) {
 		b.lines = append(b.lines, lines[i])
-		if blockCloseRe.MatchString(lines[i]) {
+		if blockCloseRe.MatchString(stripped[i]) {
 			i++
 			break
 		}
@@ -197,7 +206,7 @@ func readBlock(lines []string, start int) (*block, int) {
 }
 
 func classifyCount(b *block, resourceLine string) {
-	// resourceLine begins with one of: "  + ", "  ~ ", "  - ", "-/+ ", "+/- ", "    "
+	// resourceLine begins with one of: "  + ", "  ~ ", "  - ", "-/+ ", "+/- ", "    ", " . "
 	prefix := resourceLine[:4]
 	switch {
 	case strings.HasPrefix(prefix, "-/+"), strings.HasPrefix(prefix, "+/-"):

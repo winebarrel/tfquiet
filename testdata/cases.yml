@@ -6,6 +6,10 @@
   inputFile: plan-removed.in.txt
   expectedFile: plan-removed.out.txt
 
+- name: colored plan preserves ANSI sequences and trims Note even without divider
+  inputFile: plan-color.in.txt
+  expectedFile: plan-color.out.txt
+
 - name: show-moved keeps moved blocks
   inputFile: plan-all.in.txt
   showMoved: true
