@@ -1,0 +1,26 @@
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+  - destroy
+-/+ destroy and then create replacement
+
+Terraform will perform the following actions:
+
+  # terraform_data.keep_one will be updated in-place
+  ~ resource "terraform_data" "keep_one" {
+        id     = "49f3d73d-52b5-87c7-50b6-d9f1dd7939a5"
+      ~ input  = "keep-one" -> "keep-one-updated"
+      ~ output = "keep-one" -> (known after apply)
+    }
+
+  # terraform_data.keep_two must be replaced
+-/+ resource "terraform_data" "keep_two" {
+      ~ id               = "e8957143-01f2-cce5-cb4e-c8d44351db25" -> (known after apply)
+      ~ output           = "keep-two" -> (known after apply)
+      + triggers_replace = [
+          + "replace-me",
+        ]
+        # (1 unchanged attribute hidden)
+    }
+
+Plan: 0 to import, 1 to add, 1 to change, 1 to destroy.

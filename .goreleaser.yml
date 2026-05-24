@@ -1,0 +1,25 @@
+version: 2
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - main: ./cmd/tfquiet
+    ldflags:
+      - -X main.version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+checksum:
+  name_template: "checksums.txt"
+homebrew_casks:
+  - repository:
+      owner: winebarrel
+      name: homebrew-tfquiet
+    homepage: https://github.com/winebarrel/tfquiet
+    description: tfquiet filters import/moved/destroy noise out of terraform plan output.
+    license: MIT
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/tfquiet"]
+          end
