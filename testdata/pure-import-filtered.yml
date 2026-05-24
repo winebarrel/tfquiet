@@ -1,0 +1,31 @@
+- name: pure import (no diff) is filtered
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.imported will be updated in-place
+      # (imported from "id")
+        resource "terraform_data" "imported" {
+            id = "id"
+        }
+
+    Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+    Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
+
+- name: pure import (no diff) inside a module is filtered
+  input: |
+    Terraform will perform the following actions:
+
+      # module.inner.terraform_data.bar will be updated in-place
+      # (imported from "stub-id")
+        resource "terraform_data" "bar" {
+            id = "stub-id"
+        }
+
+    Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+    Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.

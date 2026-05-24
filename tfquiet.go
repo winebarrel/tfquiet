@@ -54,7 +54,6 @@ var (
 	noiseLineRe     = regexp.MustCompile(`: (Refreshing state\.\.\.|Preparing import\.\.\.|Reading\.\.\.|Read complete after |Opening\.\.\.|Opening complete after |Closing\.\.\.|Closing complete after )`)
 	lockLineRe      = regexp.MustCompile(`^Acquiring state lock\.`)
 	dividerRe       = regexp.MustCompile(`^─+$`)
-	planSummaryRe   = regexp.MustCompile(`^Plan: `)
 	noteFooterRe    = regexp.MustCompile(`^Note: You didn't use the -out option`)
 	warningStartRe  = regexp.MustCompile(`^Warning: Some objects will no longer be managed by Terraform`)
 )
@@ -81,17 +80,11 @@ const (
 type block struct {
 	kind  blockKind
 	lines []string
-	// counts contribution to "Plan: X to import, Y to add, Z to change, W to destroy."
-	nImport, nAdd, nChange, nDestroy int
 }
 
 type streamFilter struct {
 	w    io.Writer
 	opts *Options
-
-	dropped struct {
-		nImport, nAdd, nChange, nDestroy int
-	}
 
 	block            *block
 	blockReadingBody bool
@@ -147,10 +140,6 @@ func (f *streamFilter) processLine(line string) error {
 		return nil
 	}
 
-	if planSummaryRe.MatchString(s) {
-		return f.emit(rewriteSummary(line, f.dropped.nImport, f.dropped.nAdd, f.dropped.nChange, f.dropped.nDestroy))
-	}
-
 	return f.emit(line)
 }
 
@@ -177,7 +166,15 @@ func (f *streamFilter) continueBlock(line, s string) error {
 
 		if resourceLineRe.MatchString(s) {
 			b.lines = append(b.lines, line)
-			classifyCount(b, s)
+			// Policy: if the resource line carries a real change marker
+			// (~ / + / - / -/+ / +/-), the block must be shown even if its
+			// header looked like a filterable kind (e.g. an `import {}` that
+			// also updates the resource in-place). Drop only when the prefix
+			// indicates "no real resource change" — 4 spaces (pure import /
+			// pure move) or " . " (state-only forget).
+			if hasResourceChange(s) {
+				b.kind = kindOther
+			}
 			f.blockReadingBody = true
 			return nil
 		}
@@ -217,10 +214,6 @@ func (f *streamFilter) flushBlock() error {
 	f.blockReadingBody = false
 
 	if shouldDrop(b, f.opts) {
-		f.dropped.nImport += b.nImport
-		f.dropped.nAdd += b.nAdd
-		f.dropped.nChange += b.nChange
-		f.dropped.nDestroy += b.nDestroy
 		f.skipNextBlank = true
 		return nil
 	}
@@ -274,23 +267,16 @@ func isNoiseLine(s string) bool {
 	return false
 }
 
-func classifyCount(b *block, resourceLine string) {
-	// resourceLine begins with one of: "  + ", "  ~ ", "  - ", "-/+ ", "+/- ", "    ", " . "
-	prefix := resourceLine[:4]
+// hasResourceChange reports whether the resource header line indicates an
+// actual change (~, +, -, -/+, +/-). Prefixes "    " (pure import / pure
+// move) and " . " (state-only forget) mean no real change.
+func hasResourceChange(resourceLine string) bool {
 	switch {
-	case strings.HasPrefix(prefix, "-/+"), strings.HasPrefix(prefix, "+/-"):
-		b.nAdd++
-		b.nDestroy++
-	case strings.HasPrefix(prefix, "  +"):
-		b.nAdd++
-	case strings.HasPrefix(prefix, "  -"):
-		b.nDestroy++
-	case strings.HasPrefix(prefix, "  ~"):
-		b.nChange++
+	case strings.HasPrefix(resourceLine, "    "),
+		strings.HasPrefix(resourceLine, " . "):
+		return false
 	}
-	if b.kind == kindImport {
-		b.nImport++
-	}
+	return true
 }
 
 func shouldDrop(b *block, opts *Options) bool {
@@ -305,30 +291,3 @@ func shouldDrop(b *block, opts *Options) bool {
 	return false
 }
 
-var summaryFieldRe = regexp.MustCompile(`(\d+) to (import|add|change|destroy)`)
-
-func rewriteSummary(line string, dImport, dAdd, dChange, dDestroy int) string {
-	if dImport == 0 && dAdd == 0 && dChange == 0 && dDestroy == 0 {
-		return line
-	}
-
-	return summaryFieldRe.ReplaceAllStringFunc(line, func(match string) string {
-		sm := summaryFieldRe.FindStringSubmatch(match)
-		var n int
-		fmt.Sscanf(sm[1], "%d", &n)
-		switch sm[2] {
-		case "import":
-			n -= dImport
-		case "add":
-			n -= dAdd
-		case "change":
-			n -= dChange
-		case "destroy":
-			n -= dDestroy
-		}
-		if n < 0 {
-			n = 0
-		}
-		return fmt.Sprintf("%d to %s", n, sm[2])
-	})
-}

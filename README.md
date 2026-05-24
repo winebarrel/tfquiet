@@ -10,13 +10,15 @@ By default it removes:
 
 | What | Why it's noise |
 | ---- | -------------- |
-| `moved {}` blocks | No actual state change — just an address rename |
-| `import {}` blocks | The user already asked for the import; the diff is informational |
+| Pure `moved {}` blocks (rename only, no diff) | No actual state change — just an address rename |
+| Pure `import {}` blocks (imported state already matches config) | No diff to act on; the import itself was already requested |
 | `removed {}` with `lifecycle { destroy = false }` (state-only forget) | Block + the trailing `Warning: Some objects will no longer be managed` paragraph |
 | `Refreshing state...` / `Preparing import...` / `Acquiring state lock` lines | Per-resource status chatter, not diff |
 | Trailing `Note: You didn't use the -out option...` footer | Boilerplate |
 
-**Destroy blocks are always shown** — they are destructive and you should always see them before `apply`. This includes both resources removed from configuration and `removed {}` blocks with `destroy = true` (Terraform renders them identically in plan output).
+**Anything that represents a real resource change is always shown.** If a moved or imported block also carries an in-place update (`~`), a replacement (`-/+` / `+/-`), or a create/destroy marker, the block stays in the output. Destroy blocks are likewise always shown — this includes both resources removed from configuration and `removed {}` blocks with `destroy = true` (Terraform renders them identically in plan output).
+
+**The `Plan: …` summary line is never rewritten.** Counts always match what `terraform apply` will do.
 
 ## Installation
 
@@ -110,6 +112,14 @@ plan. Resource actions are indicated with the following symbols:
 
 Terraform will perform the following actions:
 
+  # terraform_data.imported will be updated in-place
+  # (imported from "import-stub-id")
+  ~ resource "terraform_data" "imported" {
+        id     = "import-stub-id"
+      + input  = "imported"
+      + output = (known after apply)
+    }
+
   # terraform_data.keep_one will be updated in-place
   ~ resource "terraform_data" "keep_one" {
       ~ input  = "keep-one" -> "keep-one-updated"
@@ -123,7 +133,7 @@ Terraform will perform the following actions:
       - input  = "destroy-me" -> null
     }
 
-Plan: 0 to import, 0 to add, 1 to change, 1 to destroy.
+Plan: 1 to import, 0 to add, 2 to change, 1 to destroy.
 ```
 
-The `Plan: ...` summary line is recomputed based on what was filtered out.
+The `imported` block stays in the output because it carries an in-place update — even though it was added via `import {}`, dropping it would hide a real change. Only the pure `moved {}` rename and the refresh/preparation/note chatter are filtered out.
