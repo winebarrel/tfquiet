@@ -17,20 +17,20 @@ func init() {
 }
 
 func parseArgs() (*tfquiet.Options, string) {
-	var CLI struct {
+	var cli struct {
 		tfquiet.Options
 		File    string `arg:"" optional:"" help:"Terraform plan output file. If not specified, read from stdin."`
 		Version kong.VersionFlag
 	}
 
-	parser := kong.Must(&CLI, kong.Vars{"version": version})
+	parser := kong.Must(&cli, kong.Vars{"version": version})
 	parser.Model.HelpFlag.Help = "Show help."
 
 	if _, err := parser.Parse(os.Args[1:]); err != nil {
 		parser.FatalIfErrorf(err)
 	}
 
-	return &CLI.Options, CLI.File
+	return &cli.Options, cli.File
 }
 
 func main() {
