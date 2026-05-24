@@ -1,0 +1,3 @@
+- name: ephemeral resource Opening/Closing chatter is stripped
+  inputFile: plan-ephemeral.in.txt
+  expectedFile: plan-ephemeral.out.txt
