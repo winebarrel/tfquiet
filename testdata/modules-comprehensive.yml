@@ -1,0 +1,3 @@
+- name: comprehensive modules/count/for_each plan
+  inputFile: plan-modules.in.txt
+  expectedFile: plan-modules.out.txt

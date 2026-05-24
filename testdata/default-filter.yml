@@ -1,0 +1,3 @@
+- name: default filters out moved/import/noise (destroy stays)
+  inputFile: plan-all.in.txt
+  expectedFile: plan-all.out.txt

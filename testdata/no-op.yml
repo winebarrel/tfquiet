@@ -1,0 +1,11 @@
+- name: no-op plan is passed through
+  input: |
+    Terraform used the selected providers to generate the following execution
+    plan. Resource actions are indicated with the following symbols:
+
+    No changes. Your infrastructure matches the configuration.
+  expected: |
+    Terraform used the selected providers to generate the following execution
+    plan. Resource actions are indicated with the following symbols:
+
+    No changes. Your infrastructure matches the configuration.

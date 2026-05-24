@@ -1,0 +1,21 @@
+- name: count instance destroy (index out of range) is kept
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.foo[2] will be destroyed
+      # (because index [2] is out of range for count)
+      - resource "terraform_data" "foo" {
+          - id = "abc" -> null
+        }
+
+    Plan: 0 to add, 0 to change, 1 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+      # terraform_data.foo[2] will be destroyed
+      # (because index [2] is out of range for count)
+      - resource "terraform_data" "foo" {
+          - id = "abc" -> null
+        }
+
+    Plan: 0 to add, 0 to change, 1 to destroy.

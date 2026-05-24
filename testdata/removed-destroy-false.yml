@@ -1,0 +1,3 @@
+- name: removed{} destroy=false is filtered, destroy=true (= regular destroy) stays
+  inputFile: plan-removed.in.txt
+  expectedFile: plan-removed.out.txt

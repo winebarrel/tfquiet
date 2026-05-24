@@ -1,0 +1,21 @@
+- name: for_each instance destroy (quoted key) is kept
+  input: |
+    Terraform will perform the following actions:
+
+      # terraform_data.foo["gamma"] will be destroyed
+      # (because key ["gamma"] is not in for_each map)
+      - resource "terraform_data" "foo" {
+          - id = "abc" -> null
+        }
+
+    Plan: 0 to add, 0 to change, 1 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+      # terraform_data.foo["gamma"] will be destroyed
+      # (because key ["gamma"] is not in for_each map)
+      - resource "terraform_data" "foo" {
+          - id = "abc" -> null
+        }
+
+    Plan: 0 to add, 0 to change, 1 to destroy.

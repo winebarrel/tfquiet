@@ -1,0 +1,3 @@
+- name: +/- (create_before_destroy) replacement is kept
+  inputFile: plan-cbd.in.txt
+  expectedFile: plan-cbd.out.txt
