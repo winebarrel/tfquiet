@@ -1,0 +1,15 @@
+- name: comment-style header not followed by a resource line is preserved
+  input: |
+    Terraform will perform the following actions:
+
+      # orphan comment header
+      not a resource line
+
+    Plan: 0 to add, 0 to change, 0 to destroy.
+  expected: |
+    Terraform will perform the following actions:
+
+      # orphan comment header
+      not a resource line
+
+    Plan: 0 to add, 0 to change, 0 to destroy.

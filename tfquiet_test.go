@@ -1,6 +1,7 @@
 package tfquiet_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -64,4 +65,20 @@ func TestFilter(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestFilter_NilOptionsTreatedAsDefault(t *testing.T) {
+	out, err := tfquiet.FilterBytes([]byte("hello\n"), nil)
+	require.NoError(t, err)
+	assert.Equal(t, "hello\n", string(out))
+}
+
+type errReader struct{ err error }
+
+func (r *errReader) Read(p []byte) (int, error) { return 0, r.err }
+
+func TestFilter_PropagatesReaderError(t *testing.T) {
+	_, err := tfquiet.Filter(&errReader{err: errors.New("boom")}, nil)
+	require.ErrorContains(t, err, "boom")
+	require.ErrorContains(t, err, "failed to read input")
 }
