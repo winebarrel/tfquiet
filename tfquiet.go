@@ -10,10 +10,12 @@ import (
 )
 
 func FilterBytes(src []byte, opts *Options) ([]byte, error) {
-	return Filter(bytes.NewReader(src), opts)
+	var buf bytes.Buffer
+	err := Filter(bytes.NewReader(src), &buf, opts)
+	return buf.Bytes(), err
 }
 
-func Filter(r io.Reader, opts *Options) ([]byte, error) {
+func Filter(r io.Reader, w io.Writer, opts *Options) error {
 	if opts == nil {
 		opts = &Options{}
 	}
@@ -21,16 +23,19 @@ func Filter(r io.Reader, opts *Options) ([]byte, error) {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 64*1024), 8*1024*1024)
 
-	var lines []string
+	f := &streamFilter{w: w, opts: opts}
+
 	for sc.Scan() {
-		lines = append(lines, sc.Text())
+		if err := f.processLine(sc.Text()); err != nil {
+			return err
+		}
 	}
 
 	if err := sc.Err(); err != nil {
-		return nil, fmt.Errorf("failed to read input: %w", err)
+		return fmt.Errorf("failed to read input: %w", err)
 	}
 
-	return filterLines(lines, opts), nil
+	return nil
 }
 
 var (
@@ -75,83 +80,166 @@ type block struct {
 	nImport, nAdd, nChange, nDestroy int
 }
 
-func filterLines(lines []string, opts *Options) []byte {
-	stripped := make([]string, len(lines))
-	for i, l := range lines {
-		stripped[i] = stripANSI(l)
-	}
+type streamFilter struct {
+	w    io.Writer
+	opts *Options
 
-	var dropped struct {
+	dropped struct {
 		nImport, nAdd, nChange, nDestroy int
 	}
 
-	out := &bytes.Buffer{}
-	i := 0
+	block            *block
+	blockReadingBody bool
 
-	for i < len(lines) {
-		s := stripped[i]
-
-		if !opts.ShowNoise && isNoiseLine(s) {
-			i++
-			continue
-		}
-
-		if !opts.ShowNoise && (dividerRe.MatchString(s) || noteFooterRe.MatchString(s)) {
-			// Drop divider / Note paragraph through EOF.
-			break
-		}
-
-		if !opts.ShowRemoved && warningStartRe.MatchString(s) {
-			// Skip the trailing "Warning: Some objects will no longer be
-			// managed" section that pairs with removed{} destroy=false blocks.
-			for i < len(lines) && !dividerRe.MatchString(stripped[i]) {
-				i++
-			}
-			continue
-		}
-
-		if blockHeaderRe.MatchString(s) {
-			b, next := readBlock(lines, stripped, i)
-			if shouldDrop(b, opts) {
-				dropped.nImport += b.nImport
-				dropped.nAdd += b.nAdd
-				dropped.nChange += b.nChange
-				dropped.nDestroy += b.nDestroy
-				// Also skip the trailing blank line after the block, if any.
-				if next < len(lines) && stripped[next] == "" {
-					next++
-				}
-				i = next
-				continue
-			}
-			for _, l := range b.lines {
-				out.WriteString(l)
-				out.WriteByte('\n')
-			}
-			i = next
-			continue
-		}
-
-		if planSummaryRe.MatchString(s) {
-			out.WriteString(rewriteSummary(lines[i], dropped.nImport, dropped.nAdd, dropped.nChange, dropped.nDestroy))
-			out.WriteByte('\n')
-			i++
-			continue
-		}
-
-		out.WriteString(lines[i])
-		out.WriteByte('\n')
-		i++
-	}
-
-	return trimLeadingBlanks(trimTrailingBlanks(out.Bytes()))
+	pendingBlanks   int
+	sawNonBlank     bool
+	skipNextBlank   bool
+	skippingWarning bool
+	done            bool
 }
 
-func trimLeadingBlanks(b []byte) []byte {
-	for len(b) > 0 && b[0] == '\n' {
-		b = b[1:]
+func (f *streamFilter) processLine(line string) error {
+	if f.done {
+		return nil
 	}
-	return b
+
+	s := stripANSI(line)
+
+	if f.block != nil {
+		return f.continueBlock(line, s)
+	}
+
+	if f.skippingWarning {
+		if dividerRe.MatchString(s) {
+			f.skippingWarning = false
+			// fall through and let the divider trigger the done path below
+		} else {
+			return nil
+		}
+	}
+
+	if !f.opts.ShowNoise && isNoiseLine(s) {
+		return nil
+	}
+
+	if !f.opts.ShowNoise && (dividerRe.MatchString(s) || noteFooterRe.MatchString(s)) {
+		f.done = true
+		return nil
+	}
+
+	if !f.opts.ShowRemoved && warningStartRe.MatchString(s) {
+		f.skippingWarning = true
+		return nil
+	}
+
+	if blockHeaderRe.MatchString(s) {
+		f.block = &block{kind: kindOther}
+		f.block.lines = append(f.block.lines, line)
+		f.classifyHeader(s)
+		return nil
+	}
+
+	if planSummaryRe.MatchString(s) {
+		return f.emit(rewriteSummary(line, f.dropped.nImport, f.dropped.nAdd, f.dropped.nChange, f.dropped.nDestroy))
+	}
+
+	return f.emit(line)
+}
+
+func (f *streamFilter) classifyHeader(s string) {
+	switch {
+	case importHeaderRe.MatchString(s):
+		f.block.kind = kindImport
+	case movedHeaderRe.MatchString(s) && f.block.kind == kindOther:
+		f.block.kind = kindMoved
+	case removedHeaderRe.MatchString(s) && f.block.kind == kindOther:
+		f.block.kind = kindRemoved
+	}
+}
+
+func (f *streamFilter) continueBlock(line, s string) error {
+	b := f.block
+
+	if !f.blockReadingBody {
+		if blockHeaderRe.MatchString(s) {
+			b.lines = append(b.lines, line)
+			f.classifyHeader(s)
+			return nil
+		}
+
+		if resourceLineRe.MatchString(s) {
+			b.lines = append(b.lines, line)
+			classifyCount(b, s)
+			f.blockReadingBody = true
+			return nil
+		}
+
+		// Headers were not followed by a resource line — emit them and reprocess
+		// the current line in idle state.
+		for _, l := range b.lines {
+			if err := f.emit(l); err != nil {
+				return err
+			}
+		}
+		f.block = nil
+		return f.processLine(line)
+	}
+
+	b.lines = append(b.lines, line)
+	if blockCloseRe.MatchString(s) {
+		return f.flushBlock()
+	}
+	return nil
+}
+
+func (f *streamFilter) flushBlock() error {
+	b := f.block
+	f.block = nil
+	f.blockReadingBody = false
+
+	if shouldDrop(b, f.opts) {
+		f.dropped.nImport += b.nImport
+		f.dropped.nAdd += b.nAdd
+		f.dropped.nChange += b.nChange
+		f.dropped.nDestroy += b.nDestroy
+		f.skipNextBlank = true
+		return nil
+	}
+
+	for _, l := range b.lines {
+		if err := f.emit(l); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (f *streamFilter) emit(line string) error {
+	if line == "" {
+		if !f.sawNonBlank {
+			return nil
+		}
+		if f.skipNextBlank {
+			f.skipNextBlank = false
+			return nil
+		}
+		f.pendingBlanks++
+		return nil
+	}
+
+	f.skipNextBlank = false
+
+	out := make([]byte, 0, f.pendingBlanks+len(line)+1)
+	for i := 0; i < f.pendingBlanks; i++ {
+		out = append(out, '\n')
+	}
+	f.pendingBlanks = 0
+	f.sawNonBlank = true
+	out = append(out, line...)
+	out = append(out, '\n')
+
+	_, err := f.w.Write(out)
+	return err
 }
 
 func isNoiseLine(s string) bool {
@@ -162,49 +250,6 @@ func isNoiseLine(s string) bool {
 		return true
 	}
 	return false
-}
-
-func readBlock(lines, stripped []string, start int) (*block, int) {
-	b := &block{kind: kindOther}
-	i := start
-
-	// Header comment lines.
-	for i < len(lines) && blockHeaderRe.MatchString(stripped[i]) {
-		b.lines = append(b.lines, lines[i])
-
-		switch {
-		case importHeaderRe.MatchString(stripped[i]):
-			b.kind = kindImport
-		case movedHeaderRe.MatchString(stripped[i]) && b.kind == kindOther:
-			b.kind = kindMoved
-		case removedHeaderRe.MatchString(stripped[i]) && b.kind == kindOther:
-			b.kind = kindRemoved
-		}
-
-		i++
-	}
-
-	// Resource opening line.
-	if i < len(lines) && resourceLineRe.MatchString(stripped[i]) {
-		b.lines = append(b.lines, lines[i])
-		classifyCount(b, stripped[i])
-		i++
-	} else {
-		// Not a resource block we recognize. Mark as other and stop here.
-		return b, i
-	}
-
-	// Body until closing line.
-	for i < len(lines) {
-		b.lines = append(b.lines, lines[i])
-		if blockCloseRe.MatchString(stripped[i]) {
-			i++
-			break
-		}
-		i++
-	}
-
-	return b, i
 }
 
 func classifyCount(b *block, resourceLine string) {
@@ -264,16 +309,4 @@ func rewriteSummary(line string, dImport, dAdd, dChange, dDestroy int) string {
 		}
 		return fmt.Sprintf("%d to %s", n, sm[2])
 	})
-}
-
-func trimTrailingBlanks(b []byte) []byte {
-	for len(b) > 0 && (b[len(b)-1] == '\n') {
-		// Keep exactly one trailing newline.
-		if len(b) >= 2 && b[len(b)-2] == '\n' {
-			b = b[:len(b)-1]
-			continue
-		}
-		break
-	}
-	return b
 }
