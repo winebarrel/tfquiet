@@ -15,6 +15,7 @@ By default it removes:
 | `removed {}` with `lifecycle { destroy = false }` (state-only forget) | Block + the trailing `Warning: Some objects will no longer be managed` paragraph |
 | `Note: Objects have changed outside of Terraform` drift section | Refresh-detected drift, not a configuration change |
 | `Refreshing state...` / `Preparing import...` / `Acquiring state lock` lines | Per-resource status chatter, not diff |
+| `Still reading...` / `Still refreshing...` / `Still opening...` progress lines | 10-second progress ticks for slow plan-time operations |
 | Trailing `Note: You didn't use the -out option...` footer | Boilerplate |
 
 **Anything that represents a real resource change is always shown.** If a moved or imported block also carries an in-place update (`~`), a replacement (`-/+` / `+/-`), or a create/destroy marker, the block stays in the output. Destroy blocks are likewise always shown — this includes both resources removed from configuration and `removed {}` blocks with `destroy = true` (Terraform renders them identically in plan output).
