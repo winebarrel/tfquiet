@@ -56,6 +56,7 @@ var (
 	dividerRe       = regexp.MustCompile(`^─+$`)
 	noteFooterRe    = regexp.MustCompile(`^Note: You didn't use the -out option`)
 	warningStartRe  = regexp.MustCompile(`^Warning: Some objects will no longer be managed by Terraform`)
+	driftStartRe    = regexp.MustCompile(`^Note: Objects have changed outside of Terraform`)
 )
 
 // stripANSI returns line with ANSI CSI escape sequences and trailing carriage
@@ -89,11 +90,14 @@ type streamFilter struct {
 	block            *block
 	blockReadingBody bool
 
-	pendingBlanks   int
-	sawNonBlank     bool
-	skipNextBlank   bool
-	skippingWarning bool
-	done            bool
+	pendingBlanks     int
+	sawNonBlank       bool
+	skipNextBlank     bool
+	skippingWarning   bool
+	skippingDrift     bool
+	sawDriftStart     bool
+	passedDriftCloser bool
+	done              bool
 }
 
 func (f *streamFilter) processLine(line string) error {
@@ -101,6 +105,18 @@ func (f *streamFilter) processLine(line string) error {
 
 	if f.block != nil {
 		return f.continueBlock(line, s)
+	}
+
+	// Inside a drift section we're hiding: consume everything until the
+	// closing divider. The blank that typically follows the divider also
+	// belongs to the drift block.
+	if f.skippingDrift {
+		if dividerRe.MatchString(s) {
+			f.skippingDrift = false
+			f.passedDriftCloser = true
+			f.skipNextBlank = true
+		}
+		return nil
 	}
 
 	// Any non-blank line consumes the "skip next blank" claim that was set
@@ -123,7 +139,30 @@ func (f *streamFilter) processLine(line string) error {
 		return nil
 	}
 
-	if !f.opts.ShowNoise && (dividerRe.MatchString(s) || noteFooterRe.MatchString(s)) {
+	// Drift section start. Always remember we saw it, so the divider that
+	// closes the section can be recognized as a separator (not end-of-plan).
+	if driftStartRe.MatchString(s) {
+		f.sawDriftStart = true
+		if !f.opts.ShowDrift {
+			f.skippingDrift = true
+			return nil
+		}
+		// --show-drift: fall through to emit the line.
+	}
+
+	if !f.opts.ShowNoise && noteFooterRe.MatchString(s) {
+		f.done = true
+		return nil
+	}
+
+	if !f.opts.ShowNoise && dividerRe.MatchString(s) {
+		if f.sawDriftStart && !f.passedDriftCloser {
+			// Divider separating the drift section from the actions
+			// section. With --show-drift this is the visual boundary;
+			// emit it. Either way, don't terminate here.
+			f.passedDriftCloser = true
+			return f.emit(line)
+		}
 		f.done = true
 		return nil
 	}

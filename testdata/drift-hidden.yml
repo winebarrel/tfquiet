@@ -1,0 +1,3 @@
+- name: default drops the drift section and keeps the actions section
+  inputFile: plan-drift.in.txt
+  expectedFile: plan-drift.out.txt

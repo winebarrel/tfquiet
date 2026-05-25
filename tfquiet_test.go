@@ -23,6 +23,7 @@ type testCase struct {
 	ShowMoved    bool   `yaml:"showMoved"`
 	ShowImport   bool   `yaml:"showImport"`
 	ShowRemoved  bool   `yaml:"showRemoved"`
+	ShowDrift    bool   `yaml:"showDrift"`
 	ShowNoise    bool   `yaml:"showNoise"`
 }
 
@@ -58,6 +59,7 @@ func TestFilter(t *testing.T) {
 					ShowMoved:   tt.ShowMoved,
 					ShowImport:  tt.ShowImport,
 					ShowRemoved: tt.ShowRemoved,
+					ShowDrift:   tt.ShowDrift,
 					ShowNoise:   tt.ShowNoise,
 				}
 

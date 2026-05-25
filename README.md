@@ -13,6 +13,7 @@ By default it removes:
 | Pure `moved {}` blocks (rename only, no diff) | No infrastructure change — just a state address rename |
 | Pure `import {}` blocks (imported state already matches config) | No diff to act on; the import itself was already requested |
 | `removed {}` with `lifecycle { destroy = false }` (state-only forget) | Block + the trailing `Warning: Some objects will no longer be managed` paragraph |
+| `Note: Objects have changed outside of Terraform` drift section | Refresh-detected drift, not a configuration change |
 | `Refreshing state...` / `Preparing import...` / `Acquiring state lock` lines | Per-resource status chatter, not diff |
 | Trailing `Note: You didn't use the -out option...` footer | Boilerplate |
 
@@ -39,6 +40,7 @@ Flags:
       --show-moved      Show moved blocks.
       --show-import     Show import blocks.
       --show-removed    Show removed{} lifecycle.destroy=false (state-only forget) blocks.
+      --show-drift      Show the "Objects have changed outside of Terraform" drift section.
       --show-noise      Show refresh/lock lines and the trailing Note footer.
       --version
 ```

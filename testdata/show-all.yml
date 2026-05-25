@@ -3,5 +3,6 @@
   showMoved: true
   showImport: true
   showRemoved: true
+  showDrift: true
   showNoise: true
   expectedFile: plan-all.in.txt
