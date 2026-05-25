@@ -39,4 +39,4 @@ Terraform will perform the following actions:
       - output = "destroy-me" -> null
     }
 
-Plan: 1 to import, 1 to add, 2 to change, 2 to destroy.
+Plan: 2 to import, 1 to add, 2 to change, 2 to destroy.

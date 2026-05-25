@@ -2,8 +2,7 @@
   input: |
     Terraform will perform the following actions:
 
-      # terraform_data.imported will be updated in-place
-      # (imported from "id")
+      # terraform_data.imported will be imported
         resource "terraform_data" "imported" {
             id = "id"
         }
@@ -18,8 +17,7 @@
   input: |
     Terraform will perform the following actions:
 
-      # module.inner.terraform_data.bar will be updated in-place
-      # (imported from "stub-id")
+      # module.inner.terraform_data.bar will be imported
         resource "terraform_data" "bar" {
             id = "stub-id"
         }

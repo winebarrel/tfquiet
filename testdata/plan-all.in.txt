@@ -1,4 +1,6 @@
 terraform_data.imported: Preparing import... [id=import-stub-id]
+terraform_data.imported_pure: Preparing import... [id=pure-import-stub-id]
+terraform_data.imported_pure: Refreshing state... [id=pure-import-stub-id]
 terraform_data.to_be_destroyed: Refreshing state... [id=6ef59e95-6a38-b1da-de20-a2b98b3671b4]
 terraform_data.imported: Refreshing state... [id=import-stub-id]
 terraform_data.to_be_moved_new_name: Refreshing state... [id=0ab5fef7-83af-ed68-136f-92fe8fb8970b]
@@ -19,6 +21,11 @@ Terraform will perform the following actions:
         id     = "import-stub-id"
       + input  = "imported"
       + output = (known after apply)
+    }
+
+  # terraform_data.imported_pure will be imported
+    resource "terraform_data" "imported_pure" {
+        id = "pure-import-stub-id"
     }
 
   # terraform_data.keep_one will be updated in-place
@@ -52,7 +59,7 @@ Terraform will perform the following actions:
         # (2 unchanged attributes hidden)
     }
 
-Plan: 1 to import, 1 to add, 2 to change, 2 to destroy.
+Plan: 2 to import, 1 to add, 2 to change, 2 to destroy.
 
 ─────────────────────────────────────────────────────────────────────────────
 
