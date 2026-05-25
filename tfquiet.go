@@ -51,7 +51,7 @@ var (
 	movedHeaderRe   = regexp.MustCompile(` has moved to `)
 	removedHeaderRe = regexp.MustCompile(` will no longer be managed by Terraform`)
 	importWillBeRe  = regexp.MustCompile(`^ {1,2}# .+ will be imported$`)
-	noiseLineRe     = regexp.MustCompile(`: (Refreshing state\.\.\.|Preparing import\.\.\.|Reading\.\.\.|Read complete after |Opening\.\.\.|Opening complete after |Closing\.\.\.|Closing complete after )`)
+	noiseLineRe     = regexp.MustCompile(`: (Refreshing state\.\.\.|Preparing import\.\.\.|Reading\.\.\.|Read complete after |Opening\.\.\.|Opening complete after |Closing\.\.\.|Closing complete after |Still [a-z]+\.\.\. \[)`)
 	lockLineRe      = regexp.MustCompile(`^Acquiring state lock\.`)
 	dividerRe       = regexp.MustCompile(`^─+$`)
 	noteFooterRe    = regexp.MustCompile(`^Note: You didn't use the -out option`)

@@ -1,0 +1,28 @@
+- name: Still <verb>... progress lines are stripped as noise
+  input: |
+    data.external.slow_one: Reading...
+    data.external.slow_one: Still reading... [00m10s elapsed]
+    aws_instance.web: Refreshing state... [id=i-abc]
+    aws_instance.web: Still refreshing... [00m10s elapsed]
+    ephemeral.random_password.token: Opening...
+    ephemeral.random_password.token: Still opening... [00m10s elapsed]
+    data.external.slow_one: Read complete after 15s [id=-]
+
+    Changes to Outputs:
+      + result = "ok"
+  expected: |
+    Changes to Outputs:
+      + result = "ok"
+
+- name: --show-noise preserves Still <verb>... lines
+  showNoise: true
+  input: |
+    data.external.slow_one: Still reading... [00m10s elapsed]
+
+    Changes to Outputs:
+      + result = "ok"
+  expected: |
+    data.external.slow_one: Still reading... [00m10s elapsed]
+
+    Changes to Outputs:
+      + result = "ok"
