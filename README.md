@@ -55,7 +55,7 @@ Recent Terraform releases keep ANSI color on even when stdout is a pipe; tfquiet
 
 Given this `terraform plan` output:
 
-```
+```tf
 terraform_data.to_be_destroyed: Refreshing state... [id=183c0646-...]
 terraform_data.imported_pure: Preparing import... [id=pure-import-stub-id]
 terraform_data.imported_pure: Refreshing state... [id=pure-import-stub-id]
@@ -113,7 +113,7 @@ Note: You didn't use the -out option to save this plan...
 
 `tfquiet` produces:
 
-```
+```tf
 Terraform used the selected providers to generate the following execution
 plan. Resource actions are indicated with the following symbols:
   ~ update in-place
