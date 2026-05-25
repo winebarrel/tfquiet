@@ -1,0 +1,54 @@
+azurerm_virtual_network.example: Refreshing state... [id=/subscriptions/xxx/example-vnet]
+aws_db_instance.postgres_db: Refreshing state... [id=db]
+aws_instance.keep_one: Refreshing state... [id=i-008bef01721ee7f7c]
+
+Note: Objects have changed outside of Terraform
+
+Terraform detected the following changes made outside of Terraform since the last "terraform apply" which may have affected this plan:
+
+  # aws_db_instance.postgres_db has changed
+  ~ resource "aws_db_instance" "postgres_db" {
+        id                     = "db"
+      ~ latest_restorable_time = "2021-05-25T10:24:14Z" -> "2021-05-25T10:29:14Z"
+        name                   = "db"
+        # (47 unchanged attributes hidden)
+    }
+
+  # azurerm_virtual_network.example has changed
+  ~ resource "azurerm_virtual_network" "example" {
+        id   = "/subscriptions/xxx/example-vnet"
+        name = "example-vnet"
+      + tags = {}
+    }
+
+
+Unless you have made equivalent changes to your configuration, or ignored the relevant attributes using ignore_changes, the following plan may include actions to
+undo or respond to these changes.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # aws_instance.keep_one will be updated in-place
+  ~ resource "aws_instance" "keep_one" {
+        id            = "i-008bef01721ee7f7c"
+      ~ instance_type = "t3.micro" -> "t3.small"
+    }
+
+  # azurerm_virtual_network.example will be updated in-place
+  ~ resource "azurerm_virtual_network" "example" {
+        id   = "/subscriptions/xxx/example-vnet"
+        name = "example-vnet"
+      - tags = {} -> null
+    }
+
+Plan: 0 to add, 2 to change, 0 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.

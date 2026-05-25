@@ -1,0 +1,20 @@
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # aws_instance.keep_one will be updated in-place
+  ~ resource "aws_instance" "keep_one" {
+        id            = "i-008bef01721ee7f7c"
+      ~ instance_type = "t3.micro" -> "t3.small"
+    }
+
+  # azurerm_virtual_network.example will be updated in-place
+  ~ resource "azurerm_virtual_network" "example" {
+        id   = "/subscriptions/xxx/example-vnet"
+        name = "example-vnet"
+      - tags = {} -> null
+    }
+
+Plan: 0 to add, 2 to change, 0 to destroy.
