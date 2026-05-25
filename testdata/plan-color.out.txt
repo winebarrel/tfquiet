@@ -38,4 +38,4 @@ Terraform will perform the following actions:
       [31m-[0m[0m output = "destroy-me" [90m-> null[0m[0m
     }
 
-[1mPlan:[0m [0m1 to import, 1 to add, 2 to change, 2 to destroy.
+[1mPlan:[0m [0m2 to import, 1 to add, 2 to change, 2 to destroy.

@@ -2,8 +2,7 @@
   input: |
     Terraform will perform the following actions:
 
-      # terraform_data.pure will be updated in-place
-      # (imported from "pure-id")
+      # terraform_data.pure will be imported
         resource "terraform_data" "pure" {
             id = "pure-id"
         }

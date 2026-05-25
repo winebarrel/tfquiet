@@ -56,15 +56,18 @@ Recent Terraform releases keep ANSI color on even when stdout is a pipe; tfquiet
 Given this `terraform plan` output:
 
 ```
+terraform_data.to_be_destroyed: Refreshing state... [id=183c0646-...]
+terraform_data.imported_pure: Preparing import... [id=pure-import-stub-id]
+terraform_data.imported_pure: Refreshing state... [id=pure-import-stub-id]
 terraform_data.imported: Preparing import... [id=import-stub-id]
-terraform_data.to_be_destroyed: Refreshing state... [id=6ef59e95-...]
-terraform_data.keep_one: Refreshing state... [id=49f3d73d-...]
+terraform_data.imported: Refreshing state... [id=import-stub-id]
+terraform_data.to_be_moved_new_name: Refreshing state... [id=ea60c4f5-...]
+terraform_data.keep_one: Refreshing state... [id=98f88f5f-...]
 
 Terraform used the selected providers to generate the following execution
 plan. Resource actions are indicated with the following symbols:
   ~ update in-place
   - destroy
--/+ destroy and then create replacement
 
 Terraform will perform the following actions:
 
@@ -76,8 +79,14 @@ Terraform will perform the following actions:
       + output = (known after apply)
     }
 
+  # terraform_data.imported_pure will be imported
+    resource "terraform_data" "imported_pure" {
+        id = "pure-import-stub-id"
+    }
+
   # terraform_data.keep_one will be updated in-place
   ~ resource "terraform_data" "keep_one" {
+        id     = "98f88f5f-..."
       ~ input  = "keep-one" -> "keep-one-updated"
       ~ output = "keep-one" -> (known after apply)
     }
@@ -85,16 +94,17 @@ Terraform will perform the following actions:
   # terraform_data.to_be_destroyed will be destroyed
   # (because terraform_data.to_be_destroyed is not in configuration)
   - resource "terraform_data" "to_be_destroyed" {
-      - id     = "6ef59e95-..." -> null
+      - id     = "183c0646-..." -> null
       - input  = "destroy-me" -> null
+      - output = "destroy-me" -> null
     }
 
   # terraform_data.to_be_moved_old_name has moved to terraform_data.to_be_moved_new_name
     resource "terraform_data" "to_be_moved_new_name" {
-        id     = "0ab5fef7-..."
+        id = "ea60c4f5-..."
     }
 
-Plan: 1 to import, 0 to add, 2 to change, 1 to destroy.
+Plan: 2 to import, 0 to add, 2 to change, 1 to destroy.
 
 ─────────────────────────────────────────────────────────────────────────────
 
@@ -108,7 +118,6 @@ Terraform used the selected providers to generate the following execution
 plan. Resource actions are indicated with the following symbols:
   ~ update in-place
   - destroy
--/+ destroy and then create replacement
 
 Terraform will perform the following actions:
 
@@ -122,6 +131,7 @@ Terraform will perform the following actions:
 
   # terraform_data.keep_one will be updated in-place
   ~ resource "terraform_data" "keep_one" {
+        id     = "98f88f5f-..."
       ~ input  = "keep-one" -> "keep-one-updated"
       ~ output = "keep-one" -> (known after apply)
     }
@@ -129,11 +139,12 @@ Terraform will perform the following actions:
   # terraform_data.to_be_destroyed will be destroyed
   # (because terraform_data.to_be_destroyed is not in configuration)
   - resource "terraform_data" "to_be_destroyed" {
-      - id     = "6ef59e95-..." -> null
+      - id     = "183c0646-..." -> null
       - input  = "destroy-me" -> null
+      - output = "destroy-me" -> null
     }
 
-Plan: 1 to import, 0 to add, 2 to change, 1 to destroy.
+Plan: 2 to import, 0 to add, 2 to change, 1 to destroy.
 ```
 
-The `imported` block stays in the output because it carries an in-place update — even though it was added via `import {}`, dropping it would hide a real change. Only the pure `moved {}` rename and the refresh/preparation/note chatter are filtered out.
+`imported_pure` and the `to_be_moved_*` rename both disappear: the former has no diff to apply beyond the import itself, the latter is just a state-address rename. `imported` survives because it carries an in-place update — dropping it would hide a real change — even though it was added via `import {}`. Destroy stays; refresh/preparation/note chatter is gone.

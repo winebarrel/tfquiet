@@ -50,7 +50,7 @@ var (
 	blockCloseRe    = regexp.MustCompile(`^    }$`)
 	movedHeaderRe   = regexp.MustCompile(` has moved to `)
 	removedHeaderRe = regexp.MustCompile(` will no longer be managed by Terraform`)
-	importHeaderRe  = regexp.MustCompile(`^ {1,2}# \(imported from `)
+	importWillBeRe  = regexp.MustCompile(`^ {1,2}# .+ will be imported$`)
 	noiseLineRe     = regexp.MustCompile(`: (Refreshing state\.\.\.|Preparing import\.\.\.|Reading\.\.\.|Read complete after |Opening\.\.\.|Opening complete after |Closing\.\.\.|Closing complete after )`)
 	lockLineRe      = regexp.MustCompile(`^Acquiring state lock\.`)
 	dividerRe       = regexp.MustCompile(`^─+$`)
@@ -145,7 +145,7 @@ func (f *streamFilter) processLine(line string) error {
 
 func (f *streamFilter) classifyHeader(s string) {
 	switch {
-	case importHeaderRe.MatchString(s):
+	case importWillBeRe.MatchString(s) && f.block.kind == kindOther:
 		f.block.kind = kindImport
 	case movedHeaderRe.MatchString(s) && f.block.kind == kindOther:
 		f.block.kind = kindMoved

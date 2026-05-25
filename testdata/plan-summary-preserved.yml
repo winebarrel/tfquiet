@@ -7,8 +7,7 @@
             id = "abc"
         }
 
-      # terraform_data.pure_import will be updated in-place
-      # (imported from "id")
+      # terraform_data.pure_import will be imported
         resource "terraform_data" "pure_import" {
             id = "id"
         }

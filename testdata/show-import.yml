@@ -18,6 +18,11 @@
           + output = (known after apply)
         }
 
+      # terraform_data.imported_pure will be imported
+        resource "terraform_data" "imported_pure" {
+            id = "pure-import-stub-id"
+        }
+
       # terraform_data.keep_one will be updated in-place
       ~ resource "terraform_data" "keep_one" {
             id     = "49f3d73d-52b5-87c7-50b6-d9f1dd7939a5"
@@ -43,4 +48,4 @@
           - output = "destroy-me" -> null
         }
 
-    Plan: 1 to import, 1 to add, 2 to change, 2 to destroy.
+    Plan: 2 to import, 1 to add, 2 to change, 2 to destroy.
