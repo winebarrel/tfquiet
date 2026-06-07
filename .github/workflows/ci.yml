@@ -23,7 +23,7 @@ jobs:
       - run: make test
         env:
           TEST_FLAGS: -coverprofile=coverage.out -covermode=atomic
-      - uses: codecov/codecov-action@v6
+      - uses: codecov/codecov-action@v7
         with:
           files: ./coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
