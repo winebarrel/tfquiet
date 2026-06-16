@@ -7,6 +7,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/winebarrel/tfquiet"
+	"golang.org/x/term"
 )
 
 var version string
@@ -35,18 +36,10 @@ func parseArgs() (*tfquiet.Options, string, bool) {
 	return &cli.Options, cli.File, cli.NoProgress
 }
 
-func isTerminal(f *os.File) bool {
-	fi, err := f.Stat()
-	if err != nil {
-		return false
-	}
-	return fi.Mode()&os.ModeCharDevice != 0
-}
-
 func main() {
 	opts, file, noProgress := parseArgs()
 
-	if !noProgress && isTerminal(os.Stderr) {
+	if !noProgress && term.IsTerminal(int(os.Stderr.Fd())) {
 		opts.Progress = os.Stderr
 	}
 

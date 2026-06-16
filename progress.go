@@ -79,8 +79,10 @@ func (p *progressTracker) loop() {
 }
 
 // draw snapshots the renderable state under the mutex, then writes outside
-// the lock so a slow writer can't block tick()/finish() (and through them
-// the scanning loop).
+// the lock. Holding the lock during I/O would let a slow writer stall
+// tick(), which runs on the hot scanner path. finish() can still block
+// briefly waiting for an in-flight write to complete, since it joins the
+// loop goroutine — but that's bounded to one Fprintf, not the whole stream.
 func (p *progressTracker) draw() {
 	p.mu.Lock()
 	if p.stopped || p.count == 0 {
