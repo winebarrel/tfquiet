@@ -3,6 +3,7 @@ package tfquiet
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"regexp"
 	"strings"
 	"sync"
@@ -33,8 +34,23 @@ type progressTracker struct {
 	doneCh chan struct{}
 }
 
-func newProgressTracker(w io.Writer) *progressTracker {
+// isNilWriter reports whether w is either a typed-nil interface or wraps a
+// nil pointer. Defends against `var f *os.File; opts.Progress = f`, where
+// the interface compares non-nil but writing would panic.
+func isNilWriter(w io.Writer) bool {
 	if w == nil {
+		return true
+	}
+	v := reflect.ValueOf(w)
+	switch v.Kind() {
+	case reflect.Pointer, reflect.Interface, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func:
+		return v.IsNil()
+	}
+	return false
+}
+
+func newProgressTracker(w io.Writer) *progressTracker {
+	if isNilWriter(w) {
 		return nil
 	}
 	p := &progressTracker{
@@ -62,15 +78,23 @@ func (p *progressTracker) loop() {
 	}
 }
 
+// draw snapshots the renderable state under the mutex, then writes outside
+// the lock so a slow writer can't block tick()/finish() (and through them
+// the scanning loop).
 func (p *progressTracker) draw() {
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	if p.stopped || p.count == 0 {
+		p.mu.Unlock()
 		return
 	}
 	p.spinIdx = (p.spinIdx + 1) % len(spinnerFrames)
-	fmt.Fprintf(p.w, "\r\x1b[2K%s %s (%d)", spinnerFrames[p.spinIdx], p.label, p.count)
+	frame := spinnerFrames[p.spinIdx]
+	label := p.label
+	count := p.count
 	p.active = true
+	p.mu.Unlock()
+
+	fmt.Fprintf(p.w, "\r\x1b[2K%s %s (%d)", frame, label, count)
 }
 
 func (p *progressTracker) tick(line string) {
@@ -102,16 +126,15 @@ func (p *progressTracker) finish() {
 		return
 	}
 	p.stopped = true
+	active := p.active
+	p.active = false
 	p.mu.Unlock()
 
 	close(p.stopCh)
 	<-p.doneCh
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.active {
+	if active {
 		fmt.Fprint(p.w, "\r\x1b[2K")
-		p.active = false
 	}
 }
 
