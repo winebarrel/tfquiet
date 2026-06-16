@@ -1,2 +1,3 @@
 ignore:
   - "cmd/tfquiet/main.go"
+  - "progress.go"
