@@ -25,7 +25,10 @@ func Filter(r io.Reader, w io.Writer, opts *Options) error {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 64*1024), 8*1024*1024)
 
-	f := &streamFilter{w: w, opts: opts}
+	progress := newProgressTracker(opts.Progress)
+	defer progress.finish()
+
+	f := &streamFilter{w: w, opts: opts, progress: progress}
 
 	for sc.Scan() {
 		if err := f.processLine(sc.Text()); err != nil {
@@ -84,8 +87,9 @@ type block struct {
 }
 
 type streamFilter struct {
-	w    io.Writer
-	opts *Options
+	w        io.Writer
+	opts     *Options
+	progress *progressTracker
 
 	block            *block
 	blockReadingBody bool
@@ -136,6 +140,7 @@ func (f *streamFilter) processLine(line string) error {
 	}
 
 	if !f.opts.ShowNoise && isNoiseLine(s) {
+		f.progress.tick(s)
 		return nil
 	}
 
@@ -279,6 +284,7 @@ func (f *streamFilter) emit(line string) error {
 	}
 
 	f.skipNextBlank = false
+	f.progress.finish()
 
 	out := make([]byte, 0, f.pendingBlanks+len(line)+1)
 	for i := 0; i < f.pendingBlanks; i++ {
