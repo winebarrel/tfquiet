@@ -43,6 +43,7 @@ Flags:
       --show-removed    Show removed{} lifecycle.destroy=false (state-only forget) blocks.
       --show-drift      Show the "Objects have changed outside of Terraform" drift section.
       --show-noise      Show refresh/lock lines and the trailing Note footer.
+      --no-progress     Disable the progress meter on stderr.
       --version
 ```
 
@@ -53,6 +54,8 @@ terraform plan | tfquiet
 ```
 
 Recent Terraform releases keep ANSI color on even when stdout is a pipe; tfquiet preserves those sequences in the output. Pass `terraform plan -no-color` if you want plain text.
+
+While the refresh phase is running, the lines that would normally be filtered are summarized on stderr as a spinner + counter (`⠹ Refreshing state... (42)`). The meter auto-enables when stderr is a TTY and disappears as soon as real plan output starts streaming. Pass `--no-progress` to suppress it.
 
 ### Example
 
